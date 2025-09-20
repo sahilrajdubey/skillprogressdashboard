@@ -3,6 +3,58 @@ import React, { useState } from 'react';
 
 export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    // Clear error when user starts typing
+    if (error) setError('');
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError('');
+
+    try {
+      const response = await fetch('http://localhost:8000/auth/signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Store token in localStorage
+        localStorage.setItem('access_token', data.access_token);
+        alert('Login successful!');
+        // Optionally redirect to dashboard
+        // window.location.href = '/dashboard';
+      } else {
+        // Show error from backend
+        setError(data.message || 'Login failed. Please try again.');
+      }
+    } catch (err) {
+      setError('Network error. Please check your connection and try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#05060a] font-sans text-white flex items-center justify-center">
@@ -36,13 +88,13 @@ export default function SignInPage() {
           {/* Logo / Heading */}
           <div className="flex flex-col items-center text-center">
             <div className="flex items-center justify-center">
-                                 <div className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-500 to-cyan-500 shadow-[0_0_20px_-2px_rgba(172,0,200,0.6)]">
-                      <img 
-                        src="/logo.svg" 
-                        alt="Elevate Logo" 
-                        className="w-6 h-6"
-                      />
-                    </div>
+              <div className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-500 to-cyan-500 shadow-[0_0_20px_-2px_rgba(172,0,200,0.6)]">
+                <img 
+                  src="/logo.svg" 
+                  alt="Elevate Logo" 
+                  className="w-6 h-6"
+                />
+              </div>
             </div>
             <h1 className="mt-6 text-[2rem] leading-none font-extrabold tracking-tight bg-gradient-to-br from-white via-white to-slate-400 bg-clip-text text-transparent">
               Welcome Back
@@ -52,12 +104,16 @@ export default function SignInPage() {
             </p>
           </div>
 
+          {/* Error Message */}
+          {error && (
+            <div className="mt-6 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm text-center">
+              {error}
+            </div>
+          )}
+
           {/* Form */}
           <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              // Handle sign in (credentials)
-            }}
+            onSubmit={handleSubmit}
             className="mt-8 flex flex-col gap-6"
           >
             {/* Email */}
@@ -67,7 +123,10 @@ export default function SignInPage() {
                   shadow-[0_0_0_1px_rgba(255,255,255,0.05)]
                   focus-within:shadow-[0_0_0_1px_rgba(255,255,255,0.2),0_0_22px_-4px_rgba(217,70,239,0.55)] hover:border-white/20">
                 <input
-                  type="text"
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
                   required
                   placeholder="enter your email"
                   className="peer w-full bg-transparent px-4 py-3 pr-12 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none"
@@ -95,6 +154,9 @@ export default function SignInPage() {
                   focus-within:shadow-[0_0_0_1px_rgba(255,255,255,0.2),0_0_22px_-4px_rgba(34,211,238,0.55)] hover:border-white/20">
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
                   required
                   placeholder="enter your password"
                   className="peer w-full bg-transparent px-4 py-3 pr-12 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none"
@@ -127,14 +189,26 @@ export default function SignInPage() {
             {/* Submit */}
             <button
               type="submit"
+              disabled={isSubmitting}
               className="group relative inline-flex items-center justify-center gap-2 px-7 py-3 rounded-xl font-semibold text-sm tracking-wide
                 bg-gradient-to-r from-fuchsia-600 via-violet-600 to-cyan-500
                 shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_4px_14px_-4px_rgba(168,85,247,0.6)]
                 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.2),0_0_34px_-6px_rgba(168,85,247,0.85)]
+                disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_4px_14px_-4px_rgba(168,85,247,0.6)]
                 transition"
             >
-              <span className="relative z-10">Sign In</span>
-              <span className="text-base -mr-1 group-hover:translate-x-1 transition-transform">&rarr;</span>
+              <span className="relative z-10">
+                {isSubmitting ? 'Signing In...' : 'Sign In'}
+              </span>
+              {!isSubmitting && (
+                <span className="text-base -mr-1 group-hover:translate-x-1 transition-transform">&rarr;</span>
+              )}
+              {isSubmitting && (
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+              )}
               <span className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 bg-gradient-to-r from-fuchsia-400/0 via-white/10 to-cyan-400/0 transition" />
               <span className="absolute -inset-px rounded-xl opacity-0 group-hover:opacity-100 blur-md bg-gradient-to-r from-fuchsia-600/40 via-violet-600/40 to-cyan-500/40 transition" />
             </button>
@@ -177,7 +251,7 @@ export default function SignInPage() {
 
           {/* Sign Up Link */}
           <p className="mt-7 text-center text-[12px] text-slate-400">
-            Don’t have an account?{" "}
+            Don't have an account?{" "}
             <a
               href="./signup"
               className="relative font-medium text-fuchsia-300 hover:text-fuchsia-200 transition

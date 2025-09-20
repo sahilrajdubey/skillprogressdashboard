@@ -3,12 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import React, { useState, useEffect, useCallback, useRef, memo, JSX } from 'react';
 
-/**
- * Premium Futuristic Skill Progress Dashboard Landing Page
- * - Dark, glassmorphism, neon accents
- * - Responsive, animated, accessible
- * - Pure Tailwind utility classes (no external CSS)
- */
+
 
 const NAV_LINKS = ["Home", "Features", "Courses", "Roadmap", "Analytics", "Contact"];
 
@@ -197,7 +192,7 @@ export default function App() {
             <div className="flex items-center gap-3">
               <div className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-500 to-cyan-500 shadow-[0_0_20px_-2px_rgba(172,0,200,0.6)]">
                
-<div className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-300 to-cyan-300 shadow-[0_0_20px_-2px_rgba(172,0,200,0.6)]">
+<div className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-500 to-cyan-500 shadow-[0_0_20px_-2px_rgba(172,0,200,0.6)]">
   <Image 
     src="/logo.svg" 
     alt="Elevate Logo" 
