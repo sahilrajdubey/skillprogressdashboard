@@ -1,0 +1,46 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="25%" style="stop-color:#8b5cf6"/>
+      <stop offset="50%" style="stop-color:#ec4899"/>
+      <stop offset="75%" style="stop-color:#f59e0b"/>
+      <stop offset="100%" style="stop-color:#10b981"/>
+    </linearGradient>
+    <linearGradient id="innerGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#06b6d4"/>
+      <stop offset="50%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Outer ring representing continuous growth -->
+  <circle cx="60" cy="60" r="50" fill="none" stroke="url(#mainGrad)" stroke-width="8" opacity="0.9" filter="url(#glow)"/>
+  
+  <!-- Inner ascending spiral path -->
+  <path d="M 60 85 Q 35 60 60 35 Q 85 60 60 60 Q 75 75 60 75" 
+        fill="none" 
+        stroke="url(#innerGrad)" 
+        stroke-width="6" 
+        stroke-linecap="round" 
+        opacity="0.8"/>
+  
+  <!-- Central upward arrow with rounded edges -->
+  <path d="M 60 25 L 70 40 L 65 40 L 65 55 L 55 55 L 55 40 L 50 40 Z" 
+        fill="url(#mainGrad)" 
+        filter="url(#glow)"/>
+  
+  <!-- Progress dots along the spiral -->
+  <circle cx="60" cy="85" r="3" fill="#06b6d4"/>
+  <circle cx="35" cy="60" r="3" fill="#3b82f6"/>
+  <circle cx="60" cy="35" r="3" fill="#8b5cf6"/>
+  <circle cx="85" cy="60" r="3" fill="#ec4899"/>
+  <circle cx="60" cy="60" r="4" fill="#f59e0b"/>
+</svg>

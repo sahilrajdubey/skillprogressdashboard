@@ -1,5 +1,6 @@
 'use client';
 import Link from "next/link";
+import Image from "next/image";
 import React, { useState, useEffect, useCallback, useRef, memo, JSX } from 'react';
 
 /**
@@ -91,24 +92,32 @@ const TESTIMONIALS = [
   }
 ];
 
-// Memoized Feature Card
+// Types
 type Feature = {
   title: string;
   desc: string;
   icon: JSX.Element;
   accent: string;
 };
+type Testimonial = {
+  name: string;
+  role: string;
+  message: string;
+  avatar: string;
+};
 
-const FeatureCard = memo(function FeatureCard({ feature }: { feature: Feature }) {
+// Feature Card
+const FeatureCard = React.memo(function FeatureCard({ feature }: { feature: Feature }) {
   return (
     <div
       className="group relative rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 flex flex-col gap-4 overflow-hidden transition duration-500 hover:shadow-xl hover:shadow-fuchsia-500/10 hover:border-fuchsia-400/40 hover:-translate-y-1"
       aria-label={feature.title}
     >
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-700 bg-gradient-to-br pointer-events-none mix-blend-overlay"
-           style={{ backgroundImage: `linear-gradient(135deg, var(--tw-gradient-stops))` }}
-           data-accent={feature.accent}>
-      </div>
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-700 bg-gradient-to-br pointer-events-none mix-blend-overlay"
+        style={{ backgroundImage: `linear-gradient(135deg, var(--tw-gradient-stops))` }}
+        data-accent={feature.accent}
+      />
       <div className={`w-14 h-14 rounded-lg flex items-center justify-center bg-gradient-to-br ${feature.accent} border border-white/10`}>
         {feature.icon}
       </div>
@@ -118,31 +127,18 @@ const FeatureCard = memo(function FeatureCard({ feature }: { feature: Feature })
         Learn more
         <span className="inline-block group-hover:translate-x-1 transition-transform">&rarr;</span>
       </button>
-      <div className="pointer-events-none absolute -inset-px rounded-xl ring-1 ring-inset ring-white/10 group-hover:ring-fuchsia-400/40 transition"></div>
+      <div className="pointer-events-none absolute -inset-px rounded-xl ring-1 ring-inset ring-white/10 group-hover:ring-fuchsia-400/40 transition" />
     </div>
   );
 });
 
-// Memoized Testimonial Card
-type Testimonial = {
-  name: string;
-  role: string;
-  message: string;
-  avatar: string;
-};
-
-interface TestimonialCardProps {
-  t: Testimonial;
-  active: boolean;
-}
-
-const TestimonialCard = memo(function TestimonialCard({ t, active }: TestimonialCardProps) {
+// Testimonial Card
+const TestimonialCard = React.memo(function TestimonialCard({ t, active }: { t: Testimonial; active: boolean }) {
   return (
     <div
       className={`flex flex-col justify-between rounded-2xl p-6 md:p-8 bg-white/5 backdrop-blur-md border border-white/10 w-full shrink-0
         transition-all duration-700 ease-[cubic-bezier(.4,0,.2,1)]
-        ${active ? 'opacity-100 scale-100' : 'opacity-40 scale-95'}`
-      }
+        ${active ? 'opacity-100 scale-100' : 'opacity-40 scale-95'}`}
       role="group"
       aria-roledescription="slide"
       aria-label={`${t.name} testimonial`}
@@ -200,9 +196,18 @@ export default function App() {
           <nav className="flex items-center justify-between h-16 md:h-20 rounded-full mt-4 bg-white/5 backdrop-blur-xl border border-white/10 px-5 md:px-8 shadow-lg shadow-black/30">
             <div className="flex items-center gap-3">
               <div className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-500 to-cyan-500 shadow-[0_0_20px_-2px_rgba(172,0,200,0.6)]">
-                <span className="text-sm font-bold tracking-wider">SPD</span>
+               
+<div className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-300 to-cyan-300 shadow-[0_0_20px_-2px_rgba(172,0,200,0.6)]">
+  <Image 
+    src="/logo.svg" 
+    alt="Elevate Logo" 
+    width={24}
+    height={24}
+    className="w-6 h-6"
+  />
+</div>
               </div>
-              <span className="text-sm md:text-base font-semibold tracking-wide text-slate-100">Skill Progress Dashboard</span>
+              <span className="text-sm md:text-base font-semibold tracking-wide text-slate-100">ELEVATE  </span>
             </div>
             <ul className="hidden lg:flex items-center gap-8 text-sm">
               {NAV_LINKS.map(link => (
@@ -218,15 +223,18 @@ export default function App() {
               ))}
             </ul>
             <div className="hidden md:flex items-center gap-3">
-              <Link href="./signin">
-  <button className="text-xs font-medium px-4 py-2 rounded-lg border border-white/15 bg-white/5 hover:bg-white/10 text-slate-200 transition">
-    Sign In
-  </button>
-</Link>
+              <Link href="./auth/signin">
+                <button className="text-xs font-medium px-4 py-2 rounded-lg border border-white/15 bg-white/5 hover:bg-white/10 text-slate-200 transition">
+                  Sign In
+                </button>
+              </Link>
+              <Link href="./auth/signup">
               <button className="text-xs font-semibold px-4 py-2 rounded-lg bg-gradient-to-r from-fuchsia-500 via-violet-500 to-cyan-500 hover:shadow-[0_0_0_2px_rgba(255,255,255,0.15),0_0_24px_-2px_rgba(168,85,247,0.7)] transition shadow-lg">
                 Get Started
               </button>
+               </Link>
             </div>
+           
             <button
               className="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg bg-white/5 border border-white/10 text-slate-200"
               aria-label="Open menu"
@@ -277,54 +285,51 @@ export default function App() {
             </div>
           </div>
           {/* Abstract Dashboard Illustration */}
-            <div className="flex-1 w-full relative">
-              <div className="relative mx-auto max-w-md aspect-[4/5] md:aspect-[4/4.2] rounded-3xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 backdrop-blur-xl overflow-hidden shadow-2xl shadow-fuchsia-900/30">
-                {/* Glow layers */}
-                <div className="absolute -top-24 -right-20 w-72 h-72 bg-fuchsia-500/30 rounded-full blur-3xl animate-pulse" />
-                <div className="absolute -bottom-16 -left-16 w-64 h-64 bg-cyan-500/30 rounded-full blur-3xl" />
-                {/* Mini Cards */}
-                <div className="absolute inset-0 p-6 flex flex-col gap-4">
-                  <div className="flex gap-4">
-                    <div className="flex-1 rounded-xl bg-white/10 border border-white/15 p-4 backdrop-blur-lg">
-                      <p className="text-[10px] uppercase tracking-wide text-slate-400">Progress</p>
-                      <div className="mt-2 h-2 w-full bg-slate-700/40 rounded-full overflow-hidden">
-                        <div className="h-full w-3/4 bg-gradient-to-r from-fuchsia-500 to-cyan-400 rounded-full" />
-                      </div>
-                      <p className="mt-2 text-xs text-slate-300">JavaScript Track 75%</p>
+          <div className="flex-1 w-full relative">
+            <div className="relative mx-auto max-w-md aspect-[4/5] md:aspect-[4/4.2] rounded-3xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 backdrop-blur-xl overflow-hidden shadow-2xl shadow-fuchsia-900/30">
+              <div className="absolute -top-24 -right-20 w-72 h-72 bg-fuchsia-500/30 rounded-full blur-3xl animate-pulse" />
+              <div className="absolute -bottom-16 -left-16 w-64 h-64 bg-cyan-500/30 rounded-full blur-3xl" />
+              <div className="absolute inset-0 p-6 flex flex-col gap-4">
+                <div className="flex gap-4">
+                  <div className="flex-1 rounded-xl bg-white/10 border border-white/15 p-4 backdrop-blur-lg">
+                    <p className="text-[10px] uppercase tracking-wide text-slate-400">Progress</p>
+                    <div className="mt-2 h-2 w-full bg-slate-700/40 rounded-full overflow-hidden">
+                      <div className="h-full w-3/4 bg-gradient-to-r from-fuchsia-500 to-cyan-400 rounded-full" />
                     </div>
-                    <div className="w-20 rounded-xl bg-white/10 border border-white/15 p-3 backdrop-blur-lg flex flex-col items-center justify-center">
-                      <p className="text-[9px] text-slate-400">Streak</p>
-                      <p className="mt-1 text-base font-bold text-fuchsia-300">21</p>
-                      <span className="text-[9px] text-slate-500">days</span>
-                    </div>
+                    <p className="mt-2 text-xs text-slate-300">JavaScript Track 75%</p>
                   </div>
-                  <div className="grid grid-cols-3 gap-3 mt-2">
-                    {[50, 80, 34].map((v, i) => (
-                      <div key={i} className="rounded-lg bg-white/10 border border-white/10 p-3">
-                        <p className="text-[9px] text-slate-400 mb-1">Skill {i + 1}</p>
-                        <div className="h-1.5 w-full bg-slate-600/40 rounded">
-                          <div className="h-full rounded bg-gradient-to-r from-fuchsia-400 to-cyan-400" style={{ width: `${v}%` }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-auto rounded-xl bg-gradient-to-br from-fuchsia-500/10 to-cyan-500/10 border border-white/10 p-4">
-                    <p className="text-[10px] uppercase tracking-wide text-slate-300">Weekly Velocity</p>
-                    <div className="mt-2 flex items-end gap-1 h-20">
-                      {[40, 55, 50, 70, 65, 90, 80].map((h, i) => (
-                        <div
-                          key={i}
-                          className="flex-1 rounded-t bg-gradient-to-t from-slate-600/40 to-fuchsia-400/70"
-                          style={{ height: `${h}%` }}
-                        />
-                      ))}
-                    </div>
+                  <div className="w-20 rounded-xl bg-white/10 border border-white/15 p-3 backdrop-blur-lg flex flex-col items-center justify-center">
+                    <p className="text-[9px] text-slate-400">Streak</p>
+                    <p className="mt-1 text-base font-bold text-fuchsia-300">21</p>
+                    <span className="text-[9px] text-slate-500">days</span>
                   </div>
                 </div>
-                {/* Frame overlay */}
-                <div className="absolute inset-0 rounded-3xl ring-1 ring-white/10 pointer-events-none" />
+                <div className="grid grid-cols-3 gap-3 mt-2">
+                  {[50, 80, 34].map((v, i) => (
+                    <div key={i} className="rounded-lg bg-white/10 border border-white/10 p-3">
+                      <p className="text-[9px] text-slate-400 mb-1">Skill {i + 1}</p>
+                      <div className="h-1.5 w-full bg-slate-600/40 rounded">
+                        <div className="h-full rounded bg-gradient-to-r from-fuchsia-400 to-cyan-400" style={{ width: `${v}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-auto rounded-xl bg-gradient-to-br from-fuchsia-500/10 to-cyan-500/10 border border-white/10 p-4">
+                  <p className="text-[10px] uppercase tracking-wide text-slate-300">Weekly Velocity</p>
+                  <div className="mt-2 flex items-end gap-1 h-20">
+                    {[40, 55, 50, 70, 65, 90, 80].map((h, i) => (
+                      <div
+                        key={i}
+                        className="flex-1 rounded-t bg-gradient-to-t from-slate-600/40 to-fuchsia-400/70"
+                        style={{ height: `${h}%` }}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
+              <div className="absolute inset-0 rounded-3xl ring-1 ring-white/10 pointer-events-none" />
             </div>
+          </div>
         </div>
       </section>
 
@@ -353,7 +358,6 @@ export default function App() {
           </div>
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {FEATURES.map(f => <FeatureCard key={f.title} feature={f} />)}
-            {/* Combined card to balance grid */}
             <div className="group relative md:col-span-2 xl:col-span-1 rounded-xl border border-white/10 bg-gradient-to-br from-fuchsia-500/10 via-violet-500/5 to-cyan-500/10 backdrop-blur-sm p-8 flex flex-col gap-5 overflow-hidden">
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-700 bg-[conic-gradient(at_50%_50%,rgba(217,70,239,0.15),transparent_60%)]" />
               <h3 className="text-lg font-semibold tracking-wide">Adaptive Intelligence</h3>
@@ -377,7 +381,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* Testimonials Carousel */}
+      {/* Testimonials */}
       <section id="analytics" className="py-28 relative">
         <div className="mx-auto max-w-7xl px-6 lg:px-10">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-14">
@@ -438,7 +442,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* CTA */}
       <section className="py-28 relative">
         <div className="mx-auto max-w-5xl px-6">
           <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-fuchsia-500/10 via-violet-500/10 to-cyan-500/10 backdrop-blur-xl p-10 md:p-16">
