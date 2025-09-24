@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: "Elevate - Skill Progress Dashboard",
   description: "Track, Learn & Grow with Elevate",
   icons: {
-    icon: "/logo.svg",  // ✅ bas yahan change
+    icon: "/logo1.svg",  
   },
 };
 

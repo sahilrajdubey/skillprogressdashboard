@@ -90,7 +90,7 @@ export default function SignInPage() {
             <div className="flex items-center justify-center">
               <div className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-500 to-cyan-500 shadow-[0_0_20px_-2px_rgba(172,0,200,0.6)]">
                 <img 
-                  src="/logo.svg" 
+                  src="/logo1.svg" 
                   alt="Elevate Logo" 
                   className="w-6 h-6"
                 />
