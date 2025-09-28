@@ -2,10 +2,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import React, { useState, useEffect, useCallback, useRef, memo, JSX } from 'react';
+import { Space_Mono } from "next/font/google";
 
 
 
-const NAV_LINKS = ["Home", "Features", "Courses", "Contact"];
+const NAV_LINKS = ["Home", "Features", "Courses", "Roadmap", "Analytics", "Contact"];
 
 const FEATURES = [
   {
@@ -193,7 +194,7 @@ export default function App() {
               <div className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-500 to-cyan-500 shadow-[0_0_20px_-2px_rgba(172,0,200,0.6)]">
                
 <div className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-500 to-cyan-500 shadow-[0_0_20px_-2px_rgba(172,0,200,0.6)]">
-  <Image 
+  <img
     src="/logo1.svg" 
     alt="Elevate Logo" 
     width={24}
