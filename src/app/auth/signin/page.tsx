@@ -88,13 +88,16 @@ export default function SignInPage() {
           {/* Logo / Heading */}
           <div className="flex flex-col items-center text-center">
             <div className="flex items-center justify-center">
-              <div className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-500 to-cyan-500 shadow-[0_0_20px_-2px_rgba(172,0,200,0.6)]">
-                <img 
-                  src="/logo1.svg" 
-                  alt="Elevate Logo" 
-                  className="w-6 h-6"
-                />
-              </div>
+                  <div className="flex items-center gap-3">
+  <img
+    src="/logo1.svg" 
+    alt="Elevate Logo" 
+    width={24}
+    height={24}
+    className="w-6 h-6"
+  />
+  <span className="text-sm md:text-base font-semibold tracking-wide text-slate-100">ELEVATE</span>
+</div>
             </div>
             <h1 className="mt-6 text-[2rem] leading-none font-extrabold tracking-tight bg-gradient-to-br from-white via-white to-slate-400 bg-clip-text text-transparent">
               Welcome Back

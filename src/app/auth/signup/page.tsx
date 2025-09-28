@@ -126,13 +126,16 @@ export default function SignupPage() {
                 {/* Header with Logo */}
                 <div className="text-center mb-6">
                   <div className="flex items-center justify-center gap-2 mb-4">
-                    <div className="relative w-10 h-10 flex items-center justify-center rounded-lg bg-gradient-to-br from-fuchsia-500 to-cyan-500 shadow-lg shadow-fuchsia-500/20">
-                      <img 
-                        src="/logo1.svg" 
-                        alt="Elevate Logo" 
-                        className="w-8 h-8"
-                      />
-                    </div>
+                         <div className="flex items-center gap-3">
+  <img
+    src="/logo1.svg" 
+    alt="Elevate Logo" 
+    width={24}
+    height={24}
+    className="w-6 h-6"
+  />
+  <span className="text-sm md:text-base font-semibold tracking-wide text-slate-100">ELEVATE</span>
+</div>
                     <span className="text-base font-bold tracking-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
                  
                     </span>
