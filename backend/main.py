@@ -1,10 +1,12 @@
-from fastapi import FastAPI
-from auth.routes import auth_router
+from flask import Flask, jsonify, request
 
-app = FastAPI(title="Elevate - Auth API")
+app = Flask(__name__)
 
-app.include_router(auth_router)
 
-@app.get("/")
-def root():
-    return {"message": "Auth API running"}
+@app.route("/")
+def home():
+    return "Hello Sahil! Flask backend is running 🚀"
+
+
+if __name__ == "__main__":
+    app.run(debug=True, port=5001) 
