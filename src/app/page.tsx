@@ -88,7 +88,7 @@ const DEVELOPERS = [
     linkedin: "https://www.linkedin.com/in/aditi-garg-4306bb387?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app"
   },
   {
-    name: "Vanshika Nohal",
+    name: "Vanshika Nohar",
     role: "Server-side Developer",
     description: "Deployment , Ensures quality through comprehensive testing and optimization.",
     avatar: "/van.png",
