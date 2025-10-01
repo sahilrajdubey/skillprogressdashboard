@@ -93,8 +93,8 @@ const DEVELOPERS = [
     description: "Deployment , Ensures quality through comprehensive testing and optimization.",
     avatar: "/van.png",
     skills: ["Python", "Server", "Testing"],
-    github: "https://github.com/mikechen",
-    linkedin: "https://linkedin.com/in/mikechen"
+    github: " https://github.com/vanshikanohar16-commits",
+    linkedin: "https://www.linkedin.com/in/vanshika-nohar-6288b0378?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app"
   }
 ];
 
@@ -133,8 +133,8 @@ const FeatureCard = React.memo(function FeatureCard({ feature }: { feature: Feat
       </div>
       <h3 className="text-lg font-semibold tracking-wide text-white">{feature.title}</h3>
       <p className="text-sm text-slate-300 leading-relaxed">{feature.desc}</p>
-      <button className="mt-auto self-start inline-flex items-center gap-1 text-xs font-medium text-fuchsia-300 group-hover:text-fuchsia-200 transition">
-        Learn more
+      <button className="mt-auto self-start inline-flex items-center gap-1 text-xs font-medium text-fuchsia-300 group-hover:text-fuchsia-200 transition">  
+       <a href="/auth/signin">Learn more</a>
         <span className="inline-block group-hover:translate-x-1 transition-transform">&rarr;</span>
       </button>
       <div className="pointer-events-none absolute -inset-px rounded-xl ring-1 ring-inset ring-white/10 group-hover:ring-fuchsia-400/40 transition" />
@@ -395,25 +395,43 @@ export default function App() {
           </div>
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {FEATURES.map(f => <FeatureCard key={f.title} feature={f} />)}
-            <div className="group relative md:col-span-2 xl:col-span-1 rounded-xl border border-white/10 bg-gradient-to-br from-fuchsia-500/10 via-violet-500/5 to-cyan-500/10 backdrop-blur-sm p-8 flex flex-col gap-5 overflow-hidden">
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-700 bg-[conic-gradient(at_50%_50%,rgba(217,70,239,0.15),transparent_60%)]" />
-              <h3 className="text-lg font-semibold tracking-wide">Adaptive Intelligence</h3>
-              <p className="text-sm text-slate-300 leading-relaxed">
-                Our predictive engine continuously recalibrates your roadmap using performance deltas, retention metrics, and skill synergy modeling.
-              </p>
-              <ul className="grid grid-cols-2 gap-3 text-[11px] mt-1">
-                {["AI Difficulty Tuning", "Retention Modeling", "Path Optimization", "Feedback Looping"].map(x => (
-                  <li key={x} className="flex items-center gap-2 text-slate-300">
-                    <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-fuchsia-400 to-cyan-400" />
-                    {x}
-                  </li>
-                ))}
-              </ul>
-              <button className="mt-auto self-start text-xs font-medium px-4 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-slate-200 transition">
-                Learn about AI Engine
-              </button>
-              <div className="pointer-events-none absolute -inset-px rounded-xl ring-1 ring-inset ring-white/10 group-hover:ring-fuchsia-400/40 transition" />
-            </div>
+           {/* Modified Adaptive Intelligence Card with Navigation */}
+<div 
+  onClick={() => {
+
+    window.location.href = './auth/workinprogress';
+
+  }}
+  className="group relative md:col-span-2 xl:col-span-1 rounded-xl border border-white/10 bg-gradient-to-br from-fuchsia-500/10 via-violet-500/5 to-cyan-500/10 backdrop-blur-sm p-8 flex flex-col gap-5 overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-fuchsia-500/20"
+>
+  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-700 bg-[conic-gradient(at_50%_50%,rgba(217,70,239,0.15),transparent_60%)]" />
+  <h3 className="text-lg font-semibold tracking-wide">Adaptive Intelligence</h3>
+  <p className="text-sm text-slate-300 leading-relaxed">
+    Our predictive engine continuously recalibrates your roadmap using performance deltas, retention metrics, and skill synergy modeling.
+  </p>
+  <ul className="grid grid-cols-2 gap-3 text-[11px] mt-1">
+    {["AI Difficulty Tuning", "Retention Modeling", "Path Optimization", "Feedback Looping"].map(x => (
+      <li key={x} className="flex items-center gap-2 text-slate-300">
+        <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-fuchsia-400 to-cyan-400" />
+        {x}
+      </li>
+    ))}
+  </ul>
+  <div className="mt-auto flex items-center justify-between">
+    <span className="text-xs font-medium px-4 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-slate-200 transition">
+      Learn about AI Engine
+    </span>
+    <svg 
+      className="w-5 h-5 text-fuchsia-400 transform group-hover:translate-x-1 transition-transform" 
+      fill="none" 
+      stroke="currentColor" 
+      viewBox="0 0 24 24"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+    </svg>
+  </div>
+  <div className="pointer-events-none absolute -inset-px rounded-xl ring-1 ring-inset ring-white/10 group-hover:ring-fuchsia-400/40 transition" />
+</div> 
           </div>
         </div>
       </section>
