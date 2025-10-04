@@ -396,6 +396,7 @@ export default function App() {
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {FEATURES.map(f => <FeatureCard key={f.title} feature={f} />)}
            {/* Modified Adaptive Intelligence Card with Navigation */}
+           
 <div 
   onClick={() => {
 
