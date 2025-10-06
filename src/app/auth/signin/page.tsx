@@ -26,7 +26,7 @@ export default function SignInPage() {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:8000/auth/signin', {
+      const response = await fetch('http://localhost:8000/signin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -42,15 +42,15 @@ export default function SignInPage() {
       if (response.ok) {
         // Store token in localStorage
         localStorage.setItem('access_token', data.access_token);
-        alert('Login successful!');
+       
         // Optionally redirect to dashboard
-        // window.location.href = '/dashboard';
+         window.location.href = '/auth/dashboard';
       } else {
         // Show error from backend
         setError(data.message || 'Login failed. Please try again.');
       }
     } catch (err) {
-      setError('Network error. Please check your connection and try again.');
+      setError('error : ' + err);
     } finally {
       setIsSubmitting(false);
     }

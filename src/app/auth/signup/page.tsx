@@ -34,13 +34,13 @@ export default function SignupPage() {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/auth/signup', {
+      const response = await fetch('http://localhost:8000/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          fullname: formData.fullName,
+          name: formData.fullName,
           email: formData.email,
           password: formData.password
         }),
@@ -49,7 +49,7 @@ export default function SignupPage() {
       const data = await response.json();
 
       if (response.ok) {
-        alert('Signup successful!');
+      
         // Redirect to signin page
         router.push('/auth/signin');
       } else {
