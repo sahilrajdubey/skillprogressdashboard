@@ -47,26 +47,20 @@ except Exception as e:
     print(f"❌ Error: {e}")
     exit(1)
 
-# ============================================================================
-#                            Helper Functions
-# ============================================================================
 
 def validate_email(email):
-    """Validate email format using regex"""
+
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return re.match(pattern, email) is not None
 
 def validate_password(password):
-    """
-    Validate password strength
-    Requirements: At least 6 characters
-    """
+
     if len(password) < 6:
         return False, "Password must be at least 6 characters long"
     return True, "Valid password"
 
 def validate_name(name):
-    """Validate name format"""
+    
     if not name or len(name.strip()) < 2:
         return False, "Name must be at least 2 characters long"
     if len(name) > 100:
@@ -74,7 +68,7 @@ def validate_name(name):
     return True, "Valid name"
 
 def create_response(success, message, data=None, status_code=200):
-    """Create standardized JSON response"""
+
     response = {
         'success': success,
         'message': message,
@@ -85,7 +79,7 @@ def create_response(success, message, data=None, status_code=200):
     return jsonify(response), status_code
 
 def user_to_dict(user):
-    """Convert MongoDB user document to dictionary (without password)"""
+
     if user:
         return {
             'id': str(user['_id']),
@@ -95,22 +89,11 @@ def user_to_dict(user):
         }
     return None
 
-# ============================================================================
-#                          Authentication Routes
-# ============================================================================
+
 
 @app.route('/signup', methods=['POST'])
 def signup():
-    """
-    Signup Route - Register new user
-    
-    Expected JSON Body:
-    {
-        "name": "John Doe",
-        "email": "john@example.com",
-        "password": "securepassword123"
-    }
-    """
+   
     try:
         
         data = request.get_json()
@@ -191,17 +174,9 @@ def signup():
 
 @app.route('/signin', methods=['POST'])
 def signin():
-    """
-    Signin Route - Authenticate existing user
-    
-    Expected JSON Body:
-    {
-        "email": "john@example.com",
-        "password": "securepassword123"
-    }
-    """
+
     try:
-        # Check if user is already logged in
+
         if session.get('logged_in'):
             return create_response(
                 True,
@@ -214,40 +189,39 @@ def signin():
                     'redirect': '/dashboard'
                 }
             )
-        
-        # Get JSON data from request
+
         data = request.get_json()
         
-        # Validate required fields
+        
         if not data:
             return create_response(False, "No data provided", status_code=400)
         
         email = data.get('email', '').strip().lower()
         password = data.get('password', '')
         
-        # Validate input
+        
         if not email or not password:
             return create_response(False, "Email and password are required", status_code=400)
         
-        # Find user by email
+        
         user = users_collection.find_one({'email': email})
         
-        # Check if user exists
+        
         if not user:
-            return create_response(False, "Invalid credentials. Please check your email and password.", status_code=401)
+            return create_response(False, "Invalid credentials", status_code=401)
         
-        # Verify password
+       
         if not check_password_hash(user['password'], password):
-            return create_response(False, "Invalid credentials. Please check your email and password.", status_code=401)
-        
-        # Create session
+            return create_response(False, "Incorrect password", status_code=401)
+
+       
         session.permanent = True
         session['user_id'] = str(user['_id'])
         session['user_email'] = user['email']
         session['user_name'] = user['name']
         session['logged_in'] = True
         
-        # Update last login time
+   
         users_collection.update_one(
             {'_id': user['_id']},
             {'$set': {'last_login': datetime.utcnow()}}
@@ -271,7 +245,7 @@ def signin():
 
 @app.route('/logout', methods=['POST', 'GET'])
 def logout():
-    """Logout Route - Clear user session"""
+   
     try:
         # Clear all session data
         session.clear()
@@ -283,12 +257,10 @@ def logout():
 
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
-    """
-    Dashboard Route - Protected route, only accessible after login
-    Returns user information if authenticated
-    """
+   
     try:
-        # Check if user is logged in
+    
+
         if not session.get('logged_in'):
             return create_response(
                 False, 
@@ -299,7 +271,7 @@ def dashboard():
         
         user_id = session.get('user_id')
         
-        # Get user from MongoDB
+       
         from bson.objectid import ObjectId
         user = users_collection.find_one({'_id': ObjectId(user_id)})
         
@@ -312,7 +284,7 @@ def dashboard():
                 status_code=401
             )
         
-        # Return user dashboard data
+    
         return create_response(
             True,
             f"Welcome to your dashboard, {user['name']}!",
@@ -333,7 +305,7 @@ def dashboard():
 
 @app.route('/check-auth', methods=['GET'])
 def check_auth():
-    """Check if user is authenticated"""
+   
     try:
         if not session.get('logged_in'):
             return create_response(
@@ -345,7 +317,7 @@ def check_auth():
         
         user_id = session.get('user_id')
         
-        # Get user from MongoDB
+        
         from bson.objectid import ObjectId
         user = users_collection.find_one({'_id': ObjectId(user_id)})
         
@@ -372,13 +344,10 @@ def check_auth():
         return create_response(False, f"Server error: {str(e)}", status_code=500)
 
 
-# ============================================================================
-#                          Utility Routes
-# ============================================================================
 
 @app.route('/', methods=['GET'])
 def home():
-    """Home route - API information"""
+
     return create_response(
         True,
         "Flask + MongoDB Authentication API is running!",
@@ -401,7 +370,7 @@ def home():
 
 @app.route('/users', methods=['GET'])
 def get_users():
-    """Get all users (for testing purposes - remove in production)"""
+    
     try:
         users = list(users_collection.find())
         users_list = [user_to_dict(user) for user in users]
@@ -417,9 +386,9 @@ def get_users():
 
 @app.route('/init-db', methods=['POST', 'GET'])
 def init_db():
-    """Initialize database with test users"""
+   
     try:
-        # Check if test users already exist
+      
         existing_count = users_collection.count_documents({})
         
         if existing_count > 0:
@@ -428,7 +397,7 @@ def init_db():
                 f"Database already initialized with {existing_count} users"
             )
         
-        # Create test users
+       
         test_users = [
             {
                 'name': 'Aditya Srivastava',
@@ -478,7 +447,7 @@ def init_db():
 
 @app.route('/delete-all-users', methods=['POST'])
 def delete_all_users():
-    """Delete all users (for testing only - remove in production)"""
+   
     try:
         result = users_collection.delete_many({})
         return create_response(
@@ -490,25 +459,21 @@ def delete_all_users():
         return create_response(False, f"Error: {str(e)}", status_code=500)
 
 
-# ============================================================================
-# Error Handlers
-# ============================================================================
+
 
 @app.errorhandler(404)
 def not_found(error):
-    """Handle 404 errors"""
+ 
     return create_response(False, "Endpoint not found", status_code=404)
 
 
 @app.errorhandler(500)
 def internal_error(error):
-    """Handle 500 errors"""
+   
     return create_response(False, "Internal server error", status_code=500)
 
 
-# ============================================================================
-#                     Main Application Entry Point
-# ============================================================================
+
 
 if __name__ == '__main__':
     # Print startup information
@@ -523,10 +488,10 @@ if __name__ == '__main__':
     print(f"🔌 MongoDB URI: {MONGO_URI}")
     print("="*70 + "\n")
     
-    # Run Flask app
+   
     app.run(
         host='0.0.0.0',
         port=8000,
-        debug=True,  # Set to False in production
+        debug=True,  
         threaded=True
     )
