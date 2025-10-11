@@ -1,78 +1,75 @@
-from flask import Flask, request, jsonify, session, redirect, url_for
+# main.py
+"""
+SkillProgress Dashboard Backend - Flask + MongoDB
+==================================================
+Installation:
+pip install flask flask-cors pymongo werkzeug
+
+Run server:
+python main.py
+
+Database: MongoDB Atlas
+Session-based Authentication with HTTP-only cookies
+Port: 8000
+"""
+
+from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 from pymongo import MongoClient, errors
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
+from bson.objectid import ObjectId
 import re
 import os
-from bson.objectid import ObjectId
+
+# ============================================================================
+# APP INITIALIZATION
+# ============================================================================
 
 app = Flask(__name__)
 
-app.config['SECRET_KEY'] = 'your-secret-key-change-this-in-production-2025'
-
-# ✅ Updated Cookie Settings for Cross-Origin
+app.config['SECRET_KEY'] = 'your-secret-key-change-this-in-production-2025-skillprogress'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'None'   # Changed from 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = False      # Added - False for localhost
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
 MONGO_URI = os.environ.get('MONGO_URI', 'mongodb+srv://sahil5661:sahil1234@cluster0.ezqeu4d.mongodb.net/')
 DATABASE_NAME = 'login'
-COLLECTION_NAME = 'login'
-
-CORS(app, 
-     supports_credentials=True, 
-     origins=['http://localhost:3000'],
-     allow_headers=['Content-Type', 'Authorization'],
-     expose_headers=['Set-Cookie'],
-     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
-)
 
 # ============================================================================
-# DATABASE CONNECTION
+# CORS CONFIGURATION
 # ============================================================================
+
+CORS(app, origins=["http://localhost:3000"], supports_credentials=True)
+
+# ============================================================================
+# MONGODB CONNECTION
+# ============================================================================
+
 try:
     mongo_client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
     mongo_client.server_info()
-
-    db = mongo_client[DATABASE_NAME]
-    users_collection = db[COLLECTION_NAME]
-    users_collection.create_index('email', unique=True)
     
-    # ============================================================================
-    # NEW COLLECTIONS FOR SKILLPROGRESS DASHBOARD
-    # ============================================================================
+    db = mongo_client[DATABASE_NAME]
+    users_collection = db['users']
     skills_collection = db['skills']
     courses_collection = db['courses']
-    user_courses_collection = db['user_courses']
     achievements_collection = db['achievements']
-    user_achievements_collection = db['user_achievements']
-    roadmaps_collection = db['roadmaps']
-    roadmap_steps_collection = db['roadmap_steps']
-    notifications_collection = db['notifications']
-    xp_history_collection = db['xp_history']
-
-    # Create indexes
-    skills_collection.create_index([('user_id', 1)])
-    user_courses_collection.create_index([('user_id', 1), ('course_id', 1)])
-    notifications_collection.create_index([('user_id', 1), ('created_at', -1)])
-    xp_history_collection.create_index([('user_id', 1), ('created_at', -1)])
+    roadmap_collection = db['roadmap_steps']
+    
+    users_collection.create_index('email', unique=True)
     
     print("✅ Connected to MongoDB successfully!")
-    print("✅ All collections initialized!")
     
 except errors.ServerSelectionTimeoutError as err:
     print(f"❌ MongoDB Connection Error: {err}")
-    print("Make sure MongoDB is running or check your MONGO_URI")
     exit(1)
 except Exception as e:
     print(f"❌ Error: {e}")
     exit(1)
 
-# ============================================================================
-# VALIDATION FUNCTIONS (UNCHANGED)
-# ============================================================================
+
+
 def validate_email(email):
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return re.match(pattern, email) is not None
@@ -105,36 +102,71 @@ def user_to_dict(user):
             'id': str(user['_id']),
             'name': user['name'],
             'email': user['email'],
+            'username': user.get('username', user['email'].split('@')[0]),
+            'xp': user.get('xp', 2847),
+            'level': user.get('level', 12),
+            'streak': user.get('streak', 7),
             'created_at': user.get('created_at', '').isoformat() if isinstance(user.get('created_at'), datetime) else None
         }
     return None
 
-# ============================================================================
-# NEW HELPER FUNCTION - LOGIN REQUIRED DECORATOR
-# ============================================================================
-from functools import wraps
+def init_user_data(user_id):
+    """Initialize default skills, courses, achievements, and roadmap for a new user"""
+    user_id_str = str(user_id)
+    
+    # Default skills
+    default_skills = [
+        {'user_id': user_id_str, 'skill_id': '1', 'name': 'React', 'level': 8, 'xp': 750, 'maxXp': 1000, 'category': 'Frontend', 'color': '#61dafb'},
+        {'user_id': user_id_str, 'skill_id': '2', 'name': 'TypeScript', 'level': 7, 'xp': 600, 'maxXp': 1000, 'category': 'Languages', 'color': '#3178c6'},
+        {'user_id': user_id_str, 'skill_id': '3', 'name': 'Node.js', 'level': 6, 'xp': 450, 'maxXp': 1000, 'category': 'Backend', 'color': '#339933'},
+        {'user_id': user_id_str, 'skill_id': '4', 'name': 'Python', 'level': 9, 'xp': 850, 'maxXp': 1000, 'category': 'Languages', 'color': '#3776ab'},
+        {'user_id': user_id_str, 'skill_id': '5', 'name': 'Docker', 'level': 5, 'xp': 300, 'maxXp': 1000, 'category': 'DevOps', 'color': '#2496ed'},
+        {'user_id': user_id_str, 'skill_id': '6', 'name': 'AWS', 'level': 4, 'xp': 200, 'maxXp': 1000, 'category': 'Cloud', 'color': '#ff9900'},
+    ]
+    
+    # Default courses
+    default_courses = [
+        {'user_id': user_id_str, 'course_id': '1', 'title': 'React Mastery: Advanced Patterns', 'progress': 78, 'xpReward': 500, 'thumbnail': '🎯', 'category': 'Frontend', 'lessons': 45, 'completedLessons': 35},
+        {'user_id': user_id_str, 'course_id': '2', 'title': 'TypeScript Deep Dive', 'progress': 45, 'xpReward': 450, 'thumbnail': '📘', 'category': 'Languages', 'lessons': 30, 'completedLessons': 14},
+        {'user_id': user_id_str, 'course_id': '3', 'title': 'System Design Fundamentals', 'progress': 92, 'xpReward': 800, 'thumbnail': '🏗️', 'category': 'Architecture', 'lessons': 25, 'completedLessons': 23},
+        {'user_id': user_id_str, 'course_id': '4', 'title': 'Docker & Kubernetes', 'progress': 30, 'xpReward': 600, 'thumbnail': '🐳', 'category': 'DevOps', 'lessons': 40, 'completedLessons': 12},
+    ]
+    
+    # Default achievements
+    default_achievements = [
+        {'user_id': user_id_str, 'achievement_id': '1', 'title': 'First Steps', 'description': 'Complete your first course', 'icon': '🎓', 'unlockedAt': '2025-09-15', 'rarity': 'common'},
+        {'user_id': user_id_str, 'achievement_id': '2', 'title': 'Streak Master', 'description': '7-day learning streak', 'icon': '🔥', 'unlockedAt': '2025-10-01', 'rarity': 'rare'},
+        {'user_id': user_id_str, 'achievement_id': '3', 'title': 'Code Warrior', 'description': 'Reach level 10', 'icon': '⚔️', 'unlockedAt': '2025-10-05', 'rarity': 'epic'},
+        {'user_id': user_id_str, 'achievement_id': '4', 'title': 'Knowledge Seeker', 'description': 'Complete 5 courses', 'icon': '📚', 'unlockedAt': '2025-10-08', 'rarity': 'legendary'},
+    ]
+    
+    # Default roadmap steps
+    default_roadmap = [
+        {'user_id': user_id_str, 'step_id': '1', 'title': 'Master React Hooks', 'completed': True, 'xp': 100, 'description': 'Learn all React hooks'},
+        {'user_id': user_id_str, 'step_id': '2', 'title': 'Build 3 Projects', 'completed': True, 'xp': 150, 'description': 'Apply your skills'},
+        {'user_id': user_id_str, 'step_id': '3', 'title': 'Learn State Management', 'completed': True, 'xp': 120, 'description': 'Redux & Context API'},
+        {'user_id': user_id_str, 'step_id': '4', 'title': 'Advanced TypeScript', 'completed': False, 'xp': 180, 'description': 'Generics & Utility Types'},
+        {'user_id': user_id_str, 'step_id': '5', 'title': 'Testing & TDD', 'completed': False, 'xp': 200, 'description': 'Jest & React Testing Library'},
+        {'user_id': user_id_str, 'step_id': '6', 'title': 'Performance Optimization', 'completed': False, 'xp': 220, 'description': 'Optimize React apps'},
+    ]
+    
+    if skills_collection.count_documents({'user_id': user_id_str}) == 0:
+        skills_collection.insert_many(default_skills)
+    
+    if courses_collection.count_documents({'user_id': user_id_str}) == 0:
+        courses_collection.insert_many(default_courses)
+    
+    if achievements_collection.count_documents({'user_id': user_id_str}) == 0:
+        achievements_collection.insert_many(default_achievements)
+    
+    if roadmap_collection.count_documents({'user_id': user_id_str}) == 0:
+        roadmap_collection.insert_many(default_roadmap)
 
-def login_required(f):
-    """Decorator to protect routes that require authentication"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not session.get('logged_in'):
-            return jsonify({
-                'success': False,
-                'message': 'Unauthorized. Please login first.',
-                'timestamp': datetime.utcnow().isoformat()
-            }), 401
-        return f(*args, **kwargs)
-    return decorated_function
-
-def get_current_user_id():
-    """Get current logged in user ID from session"""
-    return session.get('user_id')
-
 # ============================================================================
-# AUTHENTICATION ROUTES (UNCHANGED - YOUR ORIGINAL CODE)
+# AUTHENTICATION ROUTES
 # ============================================================================
-@app.route('/signup', methods=['POST'])
+
+@app.route('/api/signup', methods=['POST'])
 def signup():
     try:
         data = request.get_json()
@@ -169,22 +201,23 @@ def signup():
         
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
         
-        # UPDATED: Added new fields for dashboard features
         new_user = {
             'name': name,
             'email': email,
+            'username': email.split('@')[0],
             'password': hashed_password,
-            'total_xp': 0,              # NEW
-            'level': 1,                 # NEW
-            'current_streak': 0,        # NEW
-            'longest_streak': 0,        # NEW
-            'last_active_date': datetime.utcnow(),  # NEW
+            'xp': 0,
+            'level': 1,
+            'streak': 0,
             'created_at': datetime.utcnow(),
             'updated_at': datetime.utcnow()
         }
         
         result = users_collection.insert_one(new_user)
         created_user = users_collection.find_one({'_id': result.inserted_id})
+        
+        # Initialize user data
+        init_user_data(result.inserted_id)
         
         session.permanent = True
         session['user_id'] = str(result.inserted_id)
@@ -194,7 +227,7 @@ def signup():
         
         return create_response(
             True, 
-            "Account created successfully! Redirecting to dashboard...",
+            "Account created successfully!",
             data={
                 'user': user_to_dict(created_user),
                 'redirect': '/dashboard'
@@ -209,22 +242,21 @@ def signup():
         return create_response(False, f"Server error: {str(e)}", status_code=500)
 
 
-@app.route('/signin', methods=['POST'])
-def signin():
+@app.route('/api/login', methods=['POST'])
+def login():
     try:
         if session.get('logged_in'):
+            user_id = session.get('user_id')
+            user = users_collection.find_one({'_id': ObjectId(user_id)})
             return create_response(
                 True,
                 "Already logged in",
                 data={
-                    'user': {
-                        'name': session.get('user_name'),
-                        'email': session.get('user_email')
-                    },
+                    'user': user_to_dict(user),
                     'redirect': '/dashboard'
                 }
             )
-
+        
         data = request.get_json()
         
         if not data:
@@ -243,7 +275,10 @@ def signin():
         
         if not check_password_hash(user['password'], password):
             return create_response(False, "Incorrect password", status_code=401)
-
+        
+        # Initialize user data if not exists
+        init_user_data(user['_id'])
+        
         session.permanent = True
         session['user_id'] = str(user['_id'])
         session['user_email'] = user['email']
@@ -257,7 +292,7 @@ def signin():
         
         return create_response(
             True,
-            "Login successful! Redirecting to dashboard...",
+            "Login successful!",
             data={
                 'user': user_to_dict(user),
                 'redirect': '/dashboard'
@@ -266,11 +301,11 @@ def signin():
         )
         
     except Exception as e:
-        print(f"Signin Error: {str(e)}")
+        print(f"Login Error: {str(e)}")
         return create_response(False, f"Server error: {str(e)}", status_code=500)
 
 
-@app.route('/logout', methods=['POST', 'GET'])
+@app.route('/api/logout', methods=['POST', 'GET'])
 def logout():
     try:
         session.clear()
@@ -280,49 +315,8 @@ def logout():
         return create_response(False, f"Logout error: {str(e)}", status_code=500)
 
 
-@app.route('/dashboard', methods=['GET'])
-def dashboard():
-    try:
-        if not session.get('logged_in'):
-            return create_response(
-                False, 
-                "Unauthorized. Please login first.",
-                data={'redirect': './src/app/auth/signin'},
-                status_code=401
-            )
-        
-        user_id = session.get('user_id')
-        user = users_collection.find_one({'_id': ObjectId(user_id)})
-        
-        if not user:
-            session.clear()
-            return create_response(
-                False,
-                "User not found. Please login again.",
-                data={'redirect': './src/app/auth/signin'},
-                status_code=401
-            )
-        
-        return create_response(
-            True,
-            f"Welcome to your dashboard, {user['name']}!",
-            data={
-                'user': user_to_dict(user),
-                'session_info': {
-                    'logged_in': True,
-                    'user_name': session.get('user_name'),
-                    'user_email': session.get('user_email')
-                }
-            }
-        )
-        
-    except Exception as e:
-        print(f"Dashboard Error: {str(e)}")
-        return create_response(False, f"Server error: {str(e)}", status_code=500)
-
-
-@app.route('/check-auth', methods=['GET'])
-def check_auth():
+@app.route('/api/me', methods=['GET'])
+def get_current_user():
     try:
         if not session.get('logged_in'):
             return create_response(
@@ -354,369 +348,243 @@ def check_auth():
         )
         
     except Exception as e:
-        print(f"Check Auth Error: {str(e)}")
+        print(f"Get User Error: {str(e)}")
         return create_response(False, f"Server error: {str(e)}", status_code=500)
 
+# ============================================================================
+# DASHBOARD DATA ROUTES
+# ============================================================================
+
+@app.route('/api/skills', methods=['GET'])
+def get_skills():
+    try:
+        if not session.get('logged_in'):
+            return create_response(False, "Unauthorized", status_code=401)
+        
+        user_id = session.get('user_id')
+        skills = list(skills_collection.find({'user_id': user_id}, {'_id': 0, 'user_id': 0}))
+        
+        # Convert skill_id to id for frontend
+        for skill in skills:
+            skill['id'] = skill.pop('skill_id')
+        
+        return create_response(True, "Skills retrieved", data={'skills': skills})
+        
+    except Exception as e:
+        print(f"Get Skills Error: {str(e)}")
+        return create_response(False, f"Server error: {str(e)}", status_code=500)
+
+
+@app.route('/api/skills/<skill_id>', methods=['PUT'])
+def update_skill(skill_id):
+    try:
+        if not session.get('logged_in'):
+            return create_response(False, "Unauthorized", status_code=401)
+        
+        user_id = session.get('user_id')
+        data = request.get_json()
+        
+        xp_gain = data.get('xpGain', 50)
+        
+        skill = skills_collection.find_one({'user_id': user_id, 'skill_id': skill_id})
+        
+        if not skill:
+            return create_response(False, "Skill not found", status_code=404)
+        
+        new_xp = skill['xp'] + xp_gain
+        leveled_up = new_xp >= skill['maxXp']
+        
+        update_data = {
+            'xp': new_xp - skill['maxXp'] if leveled_up else new_xp,
+            'level': skill['level'] + 1 if leveled_up else skill['level']
+        }
+        
+        skills_collection.update_one(
+            {'user_id': user_id, 'skill_id': skill_id},
+            {'$set': update_data}
+        )
+        
+        # Update user XP
+        users_collection.update_one(
+            {'_id': ObjectId(user_id)},
+            {'$inc': {'xp': xp_gain}}
+        )
+        
+        updated_skill = skills_collection.find_one({'user_id': user_id, 'skill_id': skill_id}, {'_id': 0, 'user_id': 0})
+        updated_skill['id'] = updated_skill.pop('skill_id')
+        
+        return create_response(True, "Skill updated", data={'skill': updated_skill})
+        
+    except Exception as e:
+        print(f"Update Skill Error: {str(e)}")
+        return create_response(False, f"Server error: {str(e)}", status_code=500)
+
+
+@app.route('/api/courses', methods=['GET'])
+def get_courses():
+    try:
+        if not session.get('logged_in'):
+            return create_response(False, "Unauthorized", status_code=401)
+        
+        user_id = session.get('user_id')
+        courses = list(courses_collection.find({'user_id': user_id}, {'_id': 0, 'user_id': 0}))
+        
+        for course in courses:
+            course['id'] = course.pop('course_id')
+        
+        return create_response(True, "Courses retrieved", data={'courses': courses})
+        
+    except Exception as e:
+        print(f"Get Courses Error: {str(e)}")
+        return create_response(False, f"Server error: {str(e)}", status_code=500)
+
+
+@app.route('/api/achievements', methods=['GET'])
+def get_achievements():
+    try:
+        if not session.get('logged_in'):
+            return create_response(False, "Unauthorized", status_code=401)
+        
+        user_id = session.get('user_id')
+        achievements = list(achievements_collection.find({'user_id': user_id}, {'_id': 0, 'user_id': 0}))
+        
+        for achievement in achievements:
+            achievement['id'] = achievement.pop('achievement_id')
+        
+        return create_response(True, "Achievements retrieved", data={'achievements': achievements})
+        
+    except Exception as e:
+        print(f"Get Achievements Error: {str(e)}")
+        return create_response(False, f"Server error: {str(e)}", status_code=500)
+
+
+@app.route('/api/roadmap', methods=['GET'])
+def get_roadmap():
+    try:
+        if not session.get('logged_in'):
+            return create_response(False, "Unauthorized", status_code=401)
+        
+        user_id = session.get('user_id')
+        roadmap_steps = list(roadmap_collection.find({'user_id': user_id}, {'_id': 0, 'user_id': 0}))
+        
+        for step in roadmap_steps:
+            step['id'] = step.pop('step_id')
+        
+        return create_response(True, "Roadmap retrieved", data={'roadmapSteps': roadmap_steps})
+        
+    except Exception as e:
+        print(f"Get Roadmap Error: {str(e)}")
+        return create_response(False, f"Server error: {str(e)}", status_code=500)
+
+
+@app.route('/api/roadmap/<step_id>/complete', methods=['POST'])
+def complete_roadmap_step(step_id):
+    try:
+        if not session.get('logged_in'):
+            return create_response(False, "Unauthorized", status_code=401)
+        
+        user_id = session.get('user_id')
+        
+        step = roadmap_collection.find_one({'user_id': user_id, 'step_id': step_id})
+        
+        if not step:
+            return create_response(False, "Roadmap step not found", status_code=404)
+        
+        if step['completed']:
+            return create_response(False, "Step already completed", status_code=400)
+        
+        roadmap_collection.update_one(
+            {'user_id': user_id, 'step_id': step_id},
+            {'$set': {'completed': True}}
+        )
+        
+        # Update user XP
+        users_collection.update_one(
+            {'_id': ObjectId(user_id)},
+            {'$inc': {'xp': step['xp']}}
+        )
+        
+        updated_step = roadmap_collection.find_one({'user_id': user_id, 'step_id': step_id}, {'_id': 0, 'user_id': 0})
+        updated_step['id'] = updated_step.pop('step_id')
+        
+        return create_response(True, "Roadmap step completed", data={'step': updated_step, 'xpGained': step['xp']})
+        
+    except Exception as e:
+        print(f"Complete Roadmap Step Error: {str(e)}")
+        return create_response(False, f"Server error: {str(e)}", status_code=500)
+
+
+@app.route('/api/dashboard', methods=['GET'])
+def get_dashboard_data():
+    try:
+        if not session.get('logged_in'):
+            return create_response(False, "Unauthorized", status_code=401)
+        
+        user_id = session.get('user_id')
+        
+        user = users_collection.find_one({'_id': ObjectId(user_id)})
+        if not user:
+            return create_response(False, "User not found", status_code=404)
+        
+        skills = list(skills_collection.find({'user_id': user_id}, {'_id': 0, 'user_id': 0}))
+        courses = list(courses_collection.find({'user_id': user_id}, {'_id': 0, 'user_id': 0}))
+        achievements = list(achievements_collection.find({'user_id': user_id}, {'_id': 0, 'user_id': 0}))
+        roadmap_steps = list(roadmap_collection.find({'user_id': user_id}, {'_id': 0, 'user_id': 0}))
+        
+        for skill in skills:
+            skill['id'] = skill.pop('skill_id')
+        for course in courses:
+            course['id'] = course.pop('course_id')
+        for achievement in achievements:
+            achievement['id'] = achievement.pop('achievement_id')
+        for step in roadmap_steps:
+            step['id'] = step.pop('step_id')
+        
+        return create_response(
+            True,
+            f"Welcome to your dashboard, {user['name']}!",
+            data={
+                'user': user_to_dict(user),
+                'skills': skills,
+                'courses': courses,
+                'achievements': achievements,
+                'roadmapSteps': roadmap_steps
+            }
+        )
+        
+    except Exception as e:
+        print(f"Dashboard Error: {str(e)}")
+        return create_response(False, f"Server error: {str(e)}", status_code=500)
+
+# ============================================================================
+# UTILITY ROUTES
+# ============================================================================
 
 @app.route('/', methods=['GET'])
 def home():
     return create_response(
         True,
-        "Flask + MongoDB Authentication API is running!",
+        "SkillProgress Dashboard API is running!",
         data={
             'version': '2.0.0',
             'database': DATABASE_NAME,
-            'collection': COLLECTION_NAME,
             'endpoints': {
-                'POST /signup': 'Register new user',
-                'POST /signin': 'Login existing user',
-                'POST /logout': 'Logout user',
-                'GET /dashboard': 'Protected dashboard (requires auth)',
-                'GET /check-auth': 'Check authentication status',
-                'GET /users': 'List all users (for testing)',
-                'POST /init-db': 'Initialize database with test users',
-                'GET /init-sample-data': 'Initialize sample dashboard data (requires login)',
+                'POST /api/signup': 'Register new user',
+                'POST /api/login': 'Login existing user',
+                'POST /api/logout': 'Logout user',
+                'GET /api/me': 'Get current user info',
+                'GET /api/dashboard': 'Get all dashboard data',
                 'GET /api/skills': 'Get user skills',
-                'POST /api/skills': 'Create new skill',
-                'POST /api/skills/<id>/practice': 'Practice skill and gain XP',
-                'GET /api/courses': 'Get all courses',
-                'GET /api/courses/user': 'Get enrolled courses',
-                'GET /api/roadmaps': 'Get user roadmaps',
-                'GET /api/notifications': 'Get notifications',
-                'GET /api/stats/overview': 'Get dashboard stats'
+                'PUT /api/skills/<id>': 'Update skill progress',
+                'GET /api/courses': 'Get user courses',
+                'GET /api/achievements': 'Get user achievements',
+                'GET /api/roadmap': 'Get user roadmap',
+                'POST /api/roadmap/<id>/complete': 'Complete roadmap step'
             }
         }
     )
 
 
-@app.route('/users', methods=['GET'])
-def get_users():
-    try:
-        users = list(users_collection.find())
-        users_list = [user_to_dict(user) for user in users]
-        
-        return create_response(
-            True,
-            f"Found {len(users_list)} users",
-            data={'users': users_list}
-        )
-    except Exception as e:
-        return create_response(False, f"Error: {str(e)}", status_code=500)
-
-
-@app.route('/init-db', methods=['POST', 'GET'])
-def init_db():
-    try:
-        existing_count = users_collection.count_documents({})
-        
-        if existing_count > 0:
-            return create_response(
-                True,
-                f"Database already initialized with {existing_count} users"
-            )
-        
-        test_users = [
-            {
-                'name': 'Aditya Srivastava',
-                'email': 'aditya@example.com',
-                'password': 'password123'
-            },
-            {
-                'name': 'Test User',
-                'email': 'test@example.com',
-                'password': 'test123'
-            },
-            {
-                'name': 'Demo User',
-                'email': 'demo@example.com',
-                'password': 'demo123'
-            }
-        ]
-        
-        created_users = []
-        for user_data in test_users:
-            user = {
-                'name': user_data['name'],
-                'email': user_data['email'],
-                'password': generate_password_hash(user_data['password'], method='pbkdf2:sha256'),
-                'total_xp': 0,
-                'level': 1,
-                'current_streak': 0,
-                'longest_streak': 0,
-                'last_active_date': datetime.utcnow(),
-                'created_at': datetime.utcnow(),
-                'updated_at': datetime.utcnow()
-            }
-            users_collection.insert_one(user)
-            created_users.append({
-                'name': user_data['name'],
-                'email': user_data['email'],
-                'password': user_data['password']
-            })
-        
-        return create_response(
-            True,
-            "Database initialized successfully with test users",
-            data={
-                'created_users': created_users,
-                'note': 'Use these credentials to test signin'
-            }
-        )
-        
-    except Exception as e:
-        return create_response(False, f"Error initializing database: {str(e)}", status_code=500)
-
-
-@app.route('/delete-all-users', methods=['POST'])
-def delete_all_users():
-    try:
-        result = users_collection.delete_many({})
-        return create_response(
-            True,
-            f"Deleted {result.deleted_count} users",
-            data={'deleted_count': result.deleted_count}
-        )
-    except Exception as e:
-        return create_response(False, f"Error: {str(e)}", status_code=500)
-
-
-# ============================================================================
-# NEW ROUTE: INITIALIZE SAMPLE DATA FOR DASHBOARD
-# ============================================================================
-@app.route('/init-sample-data', methods=['POST', 'GET'])
-@login_required
-def init_sample_data():
-    """Initialize sample data for current user"""
-    try:
-        user_id = get_current_user_id()
-        
-        # Update user with sample XP and level
-        users_collection.update_one(
-            {'_id': ObjectId(user_id)},
-            {'$set': {
-                'total_xp': 2847,
-                'level': 12,
-                'current_streak': 7,
-                'longest_streak': 15
-            }}
-        )
-        
-        # Create sample courses
-        sample_courses = [
-            {
-                'title': 'React Mastery: Advanced Patterns',
-                'category': 'Frontend',
-                'thumbnail': '🎯',
-                'total_lessons': 45,
-                'xp_reward': 500,
-                'description': 'Master advanced React patterns',
-                'created_at': datetime.utcnow()
-            },
-            {
-                'title': 'TypeScript Deep Dive',
-                'category': 'Languages',
-                'thumbnail': '📘',
-                'total_lessons': 30,
-                'xp_reward': 450,
-                'description': 'Learn TypeScript from scratch',
-                'created_at': datetime.utcnow()
-            },
-            {
-                'title': 'System Design Fundamentals',
-                'category': 'Architecture',
-                'thumbnail': '🏗️',
-                'total_lessons': 25,
-                'xp_reward': 800,
-                'description': 'Design scalable systems',
-                'created_at': datetime.utcnow()
-            },
-            {
-                'title': 'Docker & Kubernetes',
-                'category': 'DevOps',
-                'thumbnail': '🐳',
-                'total_lessons': 40,
-                'xp_reward': 600,
-                'description': 'Container orchestration',
-                'created_at': datetime.utcnow()
-            }
-        ]
-        
-        course_ids = []
-        for course in sample_courses:
-            existing = courses_collection.find_one({'title': course['title']})
-            if not existing:
-                result = courses_collection.insert_one(course)
-                course_ids.append(str(result.inserted_id))
-            else:
-                course_ids.append(str(existing['_id']))
-        
-        # Enroll user in courses
-        if course_ids:
-            # First course - 78% progress
-            if not user_courses_collection.find_one({'user_id': user_id, 'course_id': course_ids[0]}):
-                user_courses_collection.insert_one({
-                    'user_id': user_id,
-                    'course_id': course_ids[0],
-                    'progress': 78,
-                    'completed_lessons': 35,
-                    'started_at': datetime.utcnow()
-                })
-            
-            # Second course - 45% progress
-            if len(course_ids) > 1 and not user_courses_collection.find_one({'user_id': user_id, 'course_id': course_ids[1]}):
-                user_courses_collection.insert_one({
-                    'user_id': user_id,
-                    'course_id': course_ids[1],
-                    'progress': 45,
-                    'completed_lessons': 14,
-                    'started_at': datetime.utcnow()
-                })
-            
-            # Third course - 92% progress
-            if len(course_ids) > 2 and not user_courses_collection.find_one({'user_id': user_id, 'course_id': course_ids[2]}):
-                user_courses_collection.insert_one({
-                    'user_id': user_id,
-                    'course_id': course_ids[2],
-                    'progress': 92,
-                    'completed_lessons': 23,
-                    'started_at': datetime.utcnow()
-                })
-            
-            # Fourth course - 30% progress
-            if len(course_ids) > 3 and not user_courses_collection.find_one({'user_id': user_id, 'course_id': course_ids[3]}):
-                user_courses_collection.insert_one({
-                    'user_id': user_id,
-                    'course_id': course_ids[3],
-                    'progress': 30,
-                    'completed_lessons': 12,
-                    'started_at': datetime.utcnow()
-                })
-        
-        # Create sample achievements
-        sample_achievements = [
-            {
-                'title': 'First Steps',
-                'description': 'Complete your first course',
-                'icon': '🎓',
-                'rarity': 'common',
-                'criteria': {'type': 'course_completed', 'count': 1},
-                'created_at': datetime.utcnow()
-            },
-            {
-                'title': 'Streak Master',
-                'description': '7-day learning streak',
-                'icon': '🔥',
-                'rarity': 'rare',
-                'criteria': {'type': 'streak', 'days': 7},
-                'created_at': datetime.utcnow()
-            },
-            {
-                'title': 'Code Warrior',
-                'description': 'Reach level 10',
-                'icon': '⚔️',
-                'rarity': 'epic',
-                'criteria': {'type': 'level', 'value': 10},
-                'created_at': datetime.utcnow()
-            },
-            {
-                'title': 'Knowledge Seeker',
-                'description': 'Complete 5 courses',
-                'icon': '📚',
-                'rarity': 'legendary',
-                'criteria': {'type': 'course_completed', 'count': 5},
-                'created_at': datetime.utcnow()
-            }
-        ]
-        
-        achievement_ids = []
-        for achievement in sample_achievements:
-            existing = achievements_collection.find_one({'title': achievement['title']})
-            if not existing:
-                result = achievements_collection.insert_one(achievement)
-                achievement_ids.append(str(result.inserted_id))
-            else:
-                achievement_ids.append(str(existing['_id']))
-        
-        # Unlock first 4 achievements for user
-        for ach_id in achievement_ids:
-            if not user_achievements_collection.find_one({'user_id': user_id, 'achievement_id': ach_id}):
-                user_achievements_collection.insert_one({
-                    'user_id': user_id,
-                    'achievement_id': ach_id,
-                    'unlocked_at': datetime.utcnow()
-                })
-        
-        # Create sample roadmap
-        existing_roadmap = roadmaps_collection.find_one({'user_id': user_id})
-        
-        if not existing_roadmap:
-            roadmap_id = str(roadmaps_collection.insert_one({
-                'user_id': user_id,
-                'title': 'Frontend Developer Path',
-                'description': 'Master modern frontend development',
-                'created_at': datetime.utcnow()
-            }).inserted_id)
-            
-            sample_steps = [
-                {'title': 'Master React Hooks', 'description': 'Learn all React hooks', 'xp': 100, 'order': 1, 'completed': True},
-                {'title': 'Build 3 Projects', 'description': 'Apply your skills', 'xp': 150, 'order': 2, 'completed': True},
-                {'title': 'Learn State Management', 'description': 'Redux & Context API', 'xp': 120, 'order': 3, 'completed': True},
-                {'title': 'Advanced TypeScript', 'description': 'Generics & Utility Types', 'xp': 180, 'order': 4, 'completed': False},
-                {'title': 'Testing & TDD', 'description': 'Jest & React Testing Library', 'xp': 200, 'order': 5, 'completed': False},
-                {'title': 'Performance Optimization', 'description': 'Optimize React apps', 'xp': 220, 'order': 6, 'completed': False}
-            ]
-            
-            for step in sample_steps:
-                step['roadmap_id'] = roadmap_id
-                step['created_at'] = datetime.utcnow()
-                if step['completed']:
-                    step['completed_at'] = datetime.utcnow()
-                roadmap_steps_collection.insert_one(step)
-        
-        # Add sample skills
-        sample_skills = [
-            {'name': 'React', 'level': 8, 'xp': 750, 'maxXp': 1000, 'category': 'Frontend', 'color': '#61dafb'},
-            {'name': 'TypeScript', 'level': 7, 'xp': 600, 'maxXp': 1000, 'category': 'Languages', 'color': '#3178c6'},
-            {'name': 'Node.js', 'level': 6, 'xp': 450, 'maxXp': 1000, 'category': 'Backend', 'color': '#339933'},
-            {'name': 'Python', 'level': 9, 'xp': 850, 'maxXp': 1000, 'category': 'Languages', 'color': '#3776ab'},
-            {'name': 'Docker', 'level': 5, 'xp': 300, 'maxXp': 1000, 'category': 'DevOps', 'color': '#2496ed'},
-            {'name': 'AWS', 'level': 4, 'xp': 200, 'maxXp': 1000, 'category': 'Cloud', 'color': '#ff9900'}
-        ]
-        
-        for skill in sample_skills:
-            if not skills_collection.find_one({'user_id': user_id, 'name': skill['name']}):
-                skill['user_id'] = user_id
-                skill['created_at'] = datetime.utcnow()
-                skill['updated_at'] = datetime.utcnow()
-                skills_collection.insert_one(skill)
-        
-        # Add sample notifications
-        sample_notifications = [
-            {'message': 'New achievement unlocked!', 'type': 'achievement', 'read': False},
-            {'message': 'Course "React Mastery" 80% complete', 'type': 'course', 'read': False}
-        ]
-        
-        for notif in sample_notifications:
-            notif['user_id'] = user_id
-            notif['created_at'] = datetime.utcnow()
-            if not notifications_collection.find_one({'user_id': user_id, 'message': notif['message']}):
-                notifications_collection.insert_one(notif)
-        
-        return create_response(True, "Sample data initialized successfully! Refresh your dashboard.", data={
-            'skills_added': len(sample_skills),
-            'courses_added': len(sample_courses),
-            'achievements_unlocked': len(achievement_ids),
-            'roadmap_created': True
-        })
-    
-    except Exception as e:
-        print(f"Init Sample Data Error: {str(e)}")
-        return create_response(False, f"Error: {str(e)}", status_code=500)
-
-
-# ============================================================================
-# ERROR HANDLERS (UNCHANGED)
-# ============================================================================
 @app.errorhandler(404)
 def not_found(error):
     return create_response(False, "Endpoint not found", status_code=404)
@@ -726,290 +594,31 @@ def not_found(error):
 def internal_error(error):
     return create_response(False, "Internal server error", status_code=500)
 
-
 # ============================================================================
-# REGISTER BLUEPRINTS FOR NEW FEATURES
-# ============================================================================
-# ============================================================================
-# REGISTER BLUEPRINTS FOR NEW FEATURES
-# ============================================================================
-try:
-    from routes.skills import skills_bp
-    from routes.courses import courses_bp
-    from routes.roadmaps import roadmaps_bp
-    from routes.notifications import notifications_bp
-    from routes.stats import stats_bp
-
-    app.register_blueprint(skills_bp)
-    app.register_blueprint(courses_bp)
-    app.register_blueprint(roadmaps_bp)
-    app.register_blueprint(notifications_bp)
-    app.register_blueprint(stats_bp)
-
-    print("✅ All API routes registered!")
-except ImportError as e:
-    print(f"⚠️  Warning: Could not import route blueprints: {e}")
-    print("⚠️  Make sure route files exist in backend/routes/ directory")
-
-# ============================================================================
-# INLINE API ROUTES (No separate files needed)
+# RUN SERVER
 # ============================================================================
 
-@app.route('/api/skills', methods=['GET'])
-@login_required
-def get_skills():
-    """Get all skills"""
-    try:
-        user_id = get_current_user_id()
-        skills = list(skills_collection.find({'user_id': user_id}))
-        
-        for skill in skills:
-            skill['id'] = str(skill.pop('_id'))
-            skill['user_id'] = str(skill['user_id'])
-        
-        return create_response(True, f"Found {len(skills)} skills", data={'skills': skills})
-    except Exception as e:
-        return create_response(False, f"Error: {str(e)}", status_code=500)
-
-
-@app.route('/api/skills/<skill_id>/practice', methods=['POST'])
-@login_required
-def practice_skill(skill_id):
-    """Practice skill and add XP"""
-    try:
-        data = request.get_json()
-        xp_gain = data.get('xp', 50)
-        user_id = get_current_user_id()
-        
-        # Get skill
-        skill = skills_collection.find_one({'_id': ObjectId(skill_id), 'user_id': user_id})
-        if not skill:
-            return create_response(False, "Skill not found", status_code=404)
-        
-        # Add XP
-        skill['xp'] += xp_gain
-        leveled_up = False
-        
-        while skill['xp'] >= skill['maxXp']:
-            skill['xp'] -= skill['maxXp']
-            skill['level'] += 1
-            leveled_up = True
-        
-        # Update skill
-        skills_collection.update_one(
-            {'_id': ObjectId(skill_id)},
-            {'$set': {'xp': skill['xp'], 'level': skill['level'], 'updated_at': datetime.utcnow()}}
-        )
-        
-        # Update user XP
-        user = users_collection.find_one({'_id': ObjectId(user_id)})
-        new_total_xp = user.get('total_xp', 0) + xp_gain
-        new_level = (new_total_xp // 300) + 1
-        
-        users_collection.update_one(
-            {'_id': ObjectId(user_id)},
-            {'$set': {'total_xp': new_total_xp, 'level': new_level}}
-        )
-        
-        # Create notification if leveled up
-        if leveled_up:
-            notifications_collection.insert_one({
-                'user_id': user_id,
-                'type': 'levelup',
-                'message': f"🎉 {skill['name']} leveled up to Level {skill['level']}!",
-                'read': False,
-                'created_at': datetime.utcnow()
-            })
-        
-        skill['id'] = str(skill.pop('_id'))
-        skill['user_id'] = str(skill['user_id'])
-        
-        return create_response(True, "XP added", data={
-            'skill': skill,
-            'user': {'total_xp': new_total_xp, 'level': new_level},
-            'leveled_up': leveled_up
-        })
-    except Exception as e:
-        return create_response(False, f"Error: {str(e)}", status_code=500)
-
-
-@app.route('/api/courses/user', methods=['GET'])
-@login_required
-def get_user_courses():
-    """Get user's enrolled courses"""
-    try:
-        user_id = get_current_user_id()
-        user_courses = list(user_courses_collection.find({'user_id': user_id}))
-        
-        result = []
-        for uc in user_courses:
-            course = courses_collection.find_one({'_id': ObjectId(uc['course_id'])})
-            if course:
-                course['id'] = str(course.pop('_id'))
-                course['progress'] = uc.get('progress', 0)
-                course['completedLessons'] = uc.get('completed_lessons', 0)
-                course['lessons'] = course.get('total_lessons', 0)
-                course['xpReward'] = course.get('xp_reward', 0)
-                course['thumbnail'] = course.get('thumbnail', '📚')
-                course['category'] = course.get('category', 'General')
-                result.append(course)
-        
-        return create_response(True, f"Found {len(result)} courses", data={'courses': result})
-    except Exception as e:
-        return create_response(False, f"Error: {str(e)}", status_code=500)
-
-
-@app.route('/api/roadmaps', methods=['GET'])
-@login_required
-def get_roadmaps():
-    """Get user's roadmaps with steps"""
-    try:
-        user_id = get_current_user_id()
-        roadmaps = list(roadmaps_collection.find({'user_id': user_id}))
-        
-        for roadmap in roadmaps:
-            roadmap_id = str(roadmap['_id'])
-            roadmap['id'] = roadmap_id
-            roadmap.pop('_id')
-            roadmap['user_id'] = str(roadmap['user_id'])
-            
-            # Get steps
-            steps = list(roadmap_steps_collection.find({'roadmap_id': roadmap_id}))
-            for step in steps:
-                step['id'] = str(step.pop('_id'))
-                step.pop('roadmap_id', None)
-            
-            roadmap['steps'] = sorted(steps, key=lambda x: x.get('order', 0))
-        
-        return create_response(True, f"Found {len(roadmaps)} roadmaps", data={'roadmaps': roadmaps})
-    except Exception as e:
-        return create_response(False, f"Error: {str(e)}", status_code=500)
-
-
-@app.route('/api/roadmaps/<roadmap_id>/steps/<step_id>/complete', methods=['PUT'])
-@login_required
-def complete_step(roadmap_id, step_id):
-    """Complete a roadmap step"""
-    try:
-        user_id = get_current_user_id()
-        
-        step = roadmap_steps_collection.find_one({'_id': ObjectId(step_id)})
-        if not step:
-            return create_response(False, "Step not found", status_code=404)
-        
-        if step.get('completed'):
-            return create_response(False, "Step already completed", status_code=400)
-        
-        # Mark as completed
-        roadmap_steps_collection.update_one(
-            {'_id': ObjectId(step_id)},
-            {'$set': {'completed': True, 'completed_at': datetime.utcnow()}}
-        )
-        
-        # Award XP
-        xp_reward = step.get('xp', 100)
-        user = users_collection.find_one({'_id': ObjectId(user_id)})
-        new_total_xp = user.get('total_xp', 0) + xp_reward
-        new_level = (new_total_xp // 300) + 1
-        
-        users_collection.update_one(
-            {'_id': ObjectId(user_id)},
-            {'$set': {'total_xp': new_total_xp, 'level': new_level}}
-        )
-        
-        # Create notification
-        notifications_collection.insert_one({
-            'user_id': user_id,
-            'type': 'achievement',
-            'message': f"✅ Completed: {step['title']} (+{xp_reward} XP)",
-            'read': False,
-            'created_at': datetime.utcnow()
-        })
-        
-        return create_response(True, "Step completed!", data={
-            'user': {'total_xp': new_total_xp, 'level': new_level},
-            'xp_gained': xp_reward
-        })
-    except Exception as e:
-        return create_response(False, f"Error: {str(e)}", status_code=500)
-
-
-@app.route('/api/notifications', methods=['GET'])
-@login_required
-def get_notifications():
-    """Get user notifications"""
-    try:
-        user_id = get_current_user_id()
-        notifications = list(notifications_collection.find({'user_id': user_id}).sort('created_at', -1).limit(50))
-        
-        for notif in notifications:
-            notif['id'] = str(notif.pop('_id'))
-            notif.pop('user_id', None)
-        
-        return create_response(True, f"Found {len(notifications)} notifications", data={'notifications': notifications})
-    except Exception as e:
-        return create_response(False, f"Error: {str(e)}", status_code=500)
-
-
-@app.route('/api/stats/overview', methods=['GET'])
-@login_required
-def get_stats():
-    """Get dashboard stats"""
-    try:
-        user_id = get_current_user_id()
-        user = users_collection.find_one({'_id': ObjectId(user_id)})
-        
-        skills_count = skills_collection.count_documents({'user_id': user_id})
-        courses_count = user_courses_collection.count_documents({'user_id': user_id})
-        
-        # Get achievements
-        user_achievement_ids = [ua['achievement_id'] for ua in user_achievements_collection.find({'user_id': user_id})]
-        achievements = []
-        
-        if user_achievement_ids:
-            achievements = list(achievements_collection.find({'_id': {'$in': [ObjectId(id) for id in user_achievement_ids]}}))
-            for achievement in achievements:
-                achievement['id'] = str(achievement.pop('_id'))
-        
-        return create_response(True, "Stats retrieved", data={
-            'totalXP': user.get('total_xp', 0),
-            'level': user.get('level', 1),
-            'current_streak': user.get('current_streak', 0),
-            'skills_count': skills_count,
-            'courses_count': courses_count,
-            'achievements': achievements
-        })
-    except Exception as e:
-        return create_response(False, f"Error: {str(e)}", status_code=500)
-
-
-print("✅ All inline API routes registered!")
-
-
-
-
-# ============================================================================
-# START SERVER
-# ============================================================================
 if __name__ == '__main__':
     print("\n" + "="*70)
-    print("🚀 Flask + MongoDB SkillProgress Backend Server Starting...")
+    print("🚀 SkillProgress Dashboard Backend Server Starting...")
     print("="*70)
     print(f"📍 Server running at: http://localhost:8000")
     print(f"📚 API Documentation: http://localhost:8000/")
-    print(f"🔐 Initialize DB: http://localhost:8000/init-db")
-    print(f"🎯 Initialize Sample Data: http://localhost:8000/init-sample-data (after login)")
     print(f"💾 Database: {DATABASE_NAME}")
-    print(f"📦 Main Collection: {COLLECTION_NAME}")
-    print(f"🔌 MongoDB URI: {MONGO_URI[:50]}...")
+    print(f"🔌 MongoDB URI: {MONGO_URI}")
     print("="*70)
-    print("\n📋 Available Endpoints:")
-    print("  Auth: /signup, /signin, /logout, /check-auth")
-    print("  Skills: /api/skills (GET, POST)")
-    print("  Courses: /api/courses, /api/courses/user")
-    print("  Roadmaps: /api/roadmaps")
-    print("  Notifications: /api/notifications")
-    print("  Stats: /api/stats/overview")
+    print("\n📝 API Endpoints:")
+    print("   POST   http://localhost:8000/api/signup")
+    print("   POST   http://localhost:8000/api/login")
+    print("   POST   http://localhost:8000/api/logout")
+    print("   GET    http://localhost:8000/api/me")
+    print("   GET    http://localhost:8000/api/dashboard")
+    print("   GET    http://localhost:8000/api/skills")
+    print("   PUT    http://localhost:8000/api/skills/<id>")
+    print("   GET    http://localhost:8000/api/courses")
+    print("   GET    http://localhost:8000/api/achievements")
+    print("   GET    http://localhost:8000/api/roadmap")
+    print("   POST   http://localhost:8000/api/roadmap/<id>/complete")
     print("="*70 + "\n")
     
     app.run(

@@ -1,3 +1,4 @@
+// page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -54,26 +55,6 @@ interface Notification {
 }
 
 // ============================================================================
-// API HELPER FUNCTIONS
-// ============================================================================
-
-const API_BASE = 'http://localhost:8000';
-
-async function apiCall(endpoint: string, options: RequestInit = {}) {
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    ...options,
-  });
-
-  const data = await response.json();
-  return data;
-}
-
-// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -93,86 +74,125 @@ export default function SkillProgressDashboard() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [roadmapSteps, setRoadmapSteps] = useState<RoadmapStep[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   // ============================================================================
-  // LOAD DATA FROM BACKEND ON MOUNT
+  // LOAD STATIC DATA ON MOUNT
   // ============================================================================
 
   useEffect(() => {
-    loadDashboardData();
+    // Set static user stats
+    setUserXP(2847);
+    setUserLevel(12);
+    setStreak(7);
+
+    // Set static skills
+    setSkills([
+      { id: '1', name: 'React', level: 8, xp: 750, maxXp: 1000, category: 'Frontend', color: '#61dafb' },
+      { id: '2', name: 'TypeScript', level: 7, xp: 600, maxXp: 1000, category: 'Languages', color: '#3178c6' },
+      { id: '3', name: 'Node.js', level: 6, xp: 450, maxXp: 1000, category: 'Backend', color: '#339933' },
+      { id: '4', name: 'Python', level: 9, xp: 850, maxXp: 1000, category: 'Languages', color: '#3776ab' },
+      { id: '5', name: 'Docker', level: 5, xp: 300, maxXp: 1000, category: 'DevOps', color: '#2496ed' },
+      { id: '6', name: 'AWS', level: 4, xp: 200, maxXp: 1000, category: 'Cloud', color: '#ff9900' },
+    ]);
+
+    // Set static courses
+    setCourses([
+      {
+        id: '1',
+        title: 'React Mastery: Advanced Patterns',
+        progress: 78,
+        xpReward: 500,
+        thumbnail: '🎯',
+        category: 'Frontend',
+        lessons: 45,
+        completedLessons: 35,
+      },
+      {
+        id: '2',
+        title: 'TypeScript Deep Dive',
+        progress: 45,
+        xpReward: 450,
+        thumbnail: '📘',
+        category: 'Languages',
+        lessons: 30,
+        completedLessons: 14,
+      },
+      {
+        id: '3',
+        title: 'System Design Fundamentals',
+        progress: 92,
+        xpReward: 800,
+        thumbnail: '🏗️',
+        category: 'Architecture',
+        lessons: 25,
+        completedLessons: 23,
+      },
+      {
+        id: '4',
+        title: 'Docker & Kubernetes',
+        progress: 30,
+        xpReward: 600,
+        thumbnail: '🐳',
+        category: 'DevOps',
+        lessons: 40,
+        completedLessons: 12,
+      },
+    ]);
+
+    // Set static achievements
+    setAchievements([
+      {
+        id: '1',
+        title: 'First Steps',
+        description: 'Complete your first course',
+        icon: '🎓',
+        unlockedAt: '2025-09-15',
+        rarity: 'common',
+      },
+      {
+        id: '2',
+        title: 'Streak Master',
+        description: '7-day learning streak',
+        icon: '🔥',
+        unlockedAt: '2025-10-01',
+        rarity: 'rare',
+      },
+      {
+        id: '3',
+        title: 'Code Warrior',
+        description: 'Reach level 10',
+        icon: '⚔️',
+        unlockedAt: '2025-10-05',
+        rarity: 'epic',
+      },
+      {
+        id: '4',
+        title: 'Knowledge Seeker',
+        description: 'Complete 5 courses',
+        icon: '📚',
+        unlockedAt: '2025-10-08',
+        rarity: 'legendary',
+      },
+    ]);
+
+    // Set static roadmap steps
+    setRoadmapSteps([
+      { id: '1', title: 'Master React Hooks', completed: true, xp: 100, description: 'Learn all React hooks' },
+      { id: '2', title: 'Build 3 Projects', completed: true, xp: 150, description: 'Apply your skills' },
+      { id: '3', title: 'Learn State Management', completed: true, xp: 120, description: 'Redux & Context API' },
+      { id: '4', title: 'Advanced TypeScript', completed: false, xp: 180, description: 'Generics & Utility Types' },
+      { id: '5', title: 'Testing & TDD', completed: false, xp: 200, description: 'Jest & React Testing Library' },
+      { id: '6', title: 'Performance Optimization', completed: false, xp: 220, description: 'Optimize React apps' },
+    ]);
+
+    // Set static notifications
+    setNotifications([
+      { id: '1', message: 'New achievement unlocked!', type: 'achievement', read: false },
+      { id: '2', message: 'Course "React Mastery" 80% complete', type: 'course', read: false },
+    ]);
+
+    console.log('✅ Static dashboard data loaded');
   }, []);
-
-  const loadDashboardData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Parallel API calls
-      const [statsRes, skillsRes, coursesRes, roadmapsRes, notificationsRes] = await Promise.all([
-        apiCall('/api/stats/overview'),
-        apiCall('/api/skills'),
-        apiCall('/api/courses/user'),
-        apiCall('/api/roadmaps'),
-        apiCall('/api/notifications'),
-      ]);
-
-      // Update state with backend data
-      if (statsRes.success) {
-        setUserXP(statsRes.data.totalXP || 0);
-        setUserLevel(statsRes.data.level || 1);
-        setStreak(statsRes.data.current_streak || 0);
-        setAchievements(statsRes.data.achievements || []);
-      }
-
-      if (skillsRes.success) {
-        setSkills(skillsRes.data.skills || []);
-      }
-
-      if (coursesRes.success) {
-        setCourses(coursesRes.data.courses || []);
-      }
-
-      if (roadmapsRes.success && roadmapsRes.data.roadmaps?.length > 0) {
-        setRoadmapSteps(roadmapsRes.data.roadmaps[0].steps || []);
-      }
-
-      if (notificationsRes.success) {
-        setNotifications(notificationsRes.data.notifications || []);
-      }
-
-      console.log('✅ Dashboard data loaded from backend');
-    } catch (err: any) {
-      console.error('❌ Failed to load dashboard data:', err);
-      setError(err.message || 'Failed to load dashboard data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ============================================================================
-  // INITIALIZE SAMPLE DATA (First Time Setup)
-  // ============================================================================
-
-  const initializeSampleData = async () => {
-    try {
-      setLoading(true);
-      const response = await apiCall('/init-sample-data');
-
-      if (response.success) {
-        await loadDashboardData();
-        alert('✅ Sample data initialized! Dashboard refreshed.');
-      } else {
-        alert('❌ Failed to initialize: ' + response.message);
-      }
-    } catch (err: any) {
-      console.error('❌ Failed to initialize sample data:', err);
-      alert('Failed to initialize data: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Calculate roadmap completion percentage
   const roadmapCompletion = roadmapSteps.length > 0
@@ -192,226 +212,49 @@ export default function SkillProgressDashboard() {
   }, [showConfetti]);
 
   // ============================================================================
-  // HANDLE SKILL UPDATE WITH BACKEND
+  // HANDLE SKILL UPDATE (LOCAL STATE ONLY)
   // ============================================================================
 
-  const updateSkill = async (skillId: string, xpGain: number) => {
-    try {
-      const response = await apiCall(`/api/skills/${skillId}/practice`, {
-        method: 'POST',
-        body: JSON.stringify({ xp: xpGain }),
-      });
-
-      if (response.success) {
-        // Update local state with response
-        setSkills((prev) =>
-          prev.map((skill) => (skill.id === skillId ? response.data.skill : skill))
-        );
-
-        setUserXP(response.data.user.total_xp);
-        setUserLevel(response.data.user.level);
-
-        // Show level up animation if applicable
-        if (response.data.leveled_up) {
-          setShowLevelUp(true);
-          setTimeout(() => setShowLevelUp(false), 2500);
+  const updateSkill = (skillId: string, xpGain: number) => {
+    setSkills((prev) =>
+      prev.map((skill) => {
+        if (skill.id === skillId) {
+          const newXp = skill.xp + xpGain;
+          const leveledUp = newXp >= skill.maxXp;
+          return {
+            ...skill,
+            xp: leveledUp ? newXp - skill.maxXp : newXp,
+            level: leveledUp ? skill.level + 1 : skill.level,
+          };
         }
-
-        // Reload notifications
-        const notifRes = await apiCall('/api/notifications');
-        if (notifRes.success) {
-          setNotifications(notifRes.data.notifications);
-        }
-
-        console.log('✅ Skill updated successfully');
-      } else {
-        alert('Failed to update skill: ' + response.message);
-      }
-    } catch (err: any) {
-      console.error('❌ Failed to update skill:', err);
-      alert('Failed to update skill: ' + err.message);
-    }
+        return skill;
+      })
+    );
+    
+    setUserXP((prev) => prev + xpGain);
+    console.log(`✅ Skill ${skillId} practiced: +${xpGain} XP`);
   };
 
   // ============================================================================
-  // HANDLE ROADMAP STEP COMPLETION WITH BACKEND
+  // HANDLE ROADMAP STEP COMPLETION (LOCAL STATE ONLY)
   // ============================================================================
 
-  const completeRoadmapStep = async (stepId: string) => {
+  const completeRoadmapStep = (stepId: string) => {
     const step = roadmapSteps.find((s) => s.id === stepId);
-    if (!step || step.completed) return;
-
-    try {
-      // Get roadmap ID (assuming first roadmap)
-      const roadmapsRes = await apiCall('/api/roadmaps');
-      const roadmapId = roadmapsRes.data.roadmaps?.[0]?.id;
-
-      if (!roadmapId) {
-        throw new Error('Roadmap not found');
-      }
-
-      const response = await apiCall(`/api/roadmaps/${roadmapId}/steps/${stepId}/complete`, {
-        method: 'PUT',
-      });
-
-      if (response.success) {
-        // Update local state
-        setRoadmapSteps((prev) =>
-          prev.map((s) => (s.id === stepId ? { ...s, completed: true } : s))
-        );
-
-        setUserXP(response.data.user.total_xp);
-        setUserLevel(response.data.user.level);
-
-        // Show success animation
-        setShowConfetti(true);
-        setShowLevelUp(true);
-        setTimeout(() => {
-          setShowConfetti(false);
-          setShowLevelUp(false);
-        }, 2500);
-
-        // Reload notifications
-        const notifRes = await apiCall('/api/notifications');
-        if (notifRes.success) {
-          setNotifications(notifRes.data.notifications);
-        }
-
-        console.log('✅ Roadmap step completed');
-      } else {
-        alert('Failed to complete step: ' + response.message);
-      }
-    } catch (err: any) {
-      console.error('❌ Failed to complete roadmap step:', err);
-      alert('Failed to complete step: ' + err.message);
+    if (step && !step.completed) {
+      setRoadmapSteps((prev) =>
+        prev.map((s) => (s.id === stepId ? { ...s, completed: true } : s))
+      );
+      setUserXP((prev) => prev + step.xp);
+      setShowConfetti(true);
+      setShowLevelUp(true);
+      setTimeout(() => {
+        setShowConfetti(false);
+        setShowLevelUp(false);
+      }, 2500);
+      console.log(`✅ Roadmap step completed: ${step.title} (+${step.xp} XP)`);
     }
   };
-
-  // ============================================================================
-  // LOADING STATE
-  // ============================================================================
-
-  if (loading) {
-    return (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh',
-          backgroundColor: '#0a0a0a',
-          color: '#fff',
-          fontSize: '24px',
-          flexDirection: 'column',
-        }}
-      >
-        <div style={{ fontSize: '48px', marginBottom: '20px' }}>⚡</div>
-        <div>Loading Dashboard...</div>
-      </div>
-    );
-  }
-
-  // ============================================================================
-  // ERROR STATE
-  // ============================================================================
-
-  if (error) {
-    return (
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh',
-          backgroundColor: '#0a0a0a',
-          color: '#fff',
-          fontSize: '18px',
-          padding: '20px',
-          textAlign: 'center',
-        }}
-      >
-        <div style={{ fontSize: '64px', marginBottom: '20px' }}>❌</div>
-        <div style={{ marginBottom: '20px' }}>Error: {error}</div>
-        <div style={{ marginBottom: '20px', color: '#888' }}>
-          Make sure backend is running at http://localhost:8000
-        </div>
-        <button
-          onClick={loadDashboardData}
-          style={{
-            backgroundColor: '#667eea',
-            color: '#fff',
-            border: 'none',
-            padding: '12px 24px',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '16px',
-            marginBottom: '10px',
-          }}
-        >
-          🔄 Retry
-        </button>
-        <button
-          onClick={initializeSampleData}
-          style={{
-            backgroundColor: '#764ba2',
-            color: '#fff',
-            border: 'none',
-            padding: '12px 24px',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '16px',
-          }}
-        >
-          🚀 Initialize Sample Data
-        </button>
-      </div>
-    );
-  }
-
-  // ============================================================================
-  // EMPTY STATE
-  // ============================================================================
-
-  if (skills.length === 0 && courses.length === 0 && !loading) {
-    return (
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh',
-          backgroundColor: '#0a0a0a',
-          color: '#fff',
-          fontSize: '18px',
-          padding: '20px',
-          textAlign: 'center',
-        }}
-      >
-        <div style={{ fontSize: '64px', marginBottom: '20px' }}>🎯</div>
-        <div style={{ marginBottom: '10px', fontSize: '24px' }}>Welcome to SkillProgress!</div>
-        <div style={{ marginBottom: '30px', color: '#888' }}>
-          Click below to initialize sample data and get started
-        </div>
-        <button
-          onClick={initializeSampleData}
-          style={{
-            backgroundColor: '#667eea',
-            color: '#fff',
-            border: 'none',
-            padding: '16px 32px',
-            borderRadius: '12px',
-            cursor: 'pointer',
-            fontSize: '18px',
-            fontWeight: 'bold',
-          }}
-        >
-          🚀 Initialize Dashboard
-        </button>
-      </div>
-    );
-  }
 
   // ============================================================================
   // STYLES (UNCHANGED)
@@ -553,7 +396,7 @@ export default function SkillProgressDashboard() {
   };
 
   // ============================================================================
-  // COMPONENTS (ALL UNCHANGED - JUST USING STATE FROM BACKEND)
+  // COMPONENTS (ALL UNCHANGED)
   // ============================================================================
 
   // Confetti Animation Component
@@ -958,8 +801,7 @@ export default function SkillProgressDashboard() {
                   cursor: 'pointer',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-4px)';
-                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.2)';
+                                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.2)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
@@ -1084,7 +926,7 @@ export default function SkillProgressDashboard() {
     );
   };
 
-  // Courses View Component (Keep all your existing component code...)
+  // Courses View Component
   const CoursesView = () => {
     return (
       <div>
@@ -1527,7 +1369,7 @@ export default function SkillProgressDashboard() {
         return <SkillTrackerView />;
       case 'courses':
         return <CoursesView />;
-           case 'roadmaps':
+      case 'roadmaps':
         return <RoadmapsView />;
       case 'analysis':
         return <AnalysisView />;
