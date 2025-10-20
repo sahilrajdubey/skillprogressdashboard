@@ -67,7 +67,7 @@ const DEVELOPERS = [
     avatar: "/sahil.jpg",
     skills: ["React", "Next.js", "Node.js", "UI/UX"],
     github: "https://github.com/sahilrajdubey",
-    linkedin: "https://linkedin.com/in/sahilrajdubey"
+    linkedin: "https://linkedin.com/in/sahil-raj-dubey"
   },
   {
     name: "Ashish Tiwari",
