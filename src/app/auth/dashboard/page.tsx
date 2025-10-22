@@ -483,19 +483,28 @@ export default function SkillProgressDashboard() {
   // Sidebar Component
   const Sidebar = () => {
     const navItems: { id: Page; label: string; icon: string }[] = [
-      { id: 'dashboard', label: 'Dashboard', icon: '🏠' },
-      { id: 'skills', label: 'Skill Tracker', icon: '🎯' },
-      { id: 'courses', label: 'Courses', icon: '📚' },
-      { id: 'roadmaps', label: 'Roadmaps', icon: '🗺️' },
-      { id: 'analysis', label: 'Analysis', icon: '📊' },
-      { id: 'profile', label: 'Profile', icon: '👤' },
-      { id: 'settings', label: 'Settings', icon: '⚙️' },
+      { id: 'dashboard', label: 'Dashboard', icon: '' },
+      { id: 'skills', label: 'Skill Tracker', icon: '' },
+      { id: 'courses', label: 'Courses', icon: '' },
+      { id: 'roadmaps', label: 'Roadmaps', icon: '' },
+      { id: 'analysis', label: 'Analysis', icon: '' },
+      { id: 'profile', label: 'Profile', icon: '' },
+      { id: 'settings', label: 'Settings', icon: '' },
     ];
 
     return (
       <div style={styles.sidebar}>
         <div style={styles.sidebarHeader}>
-          <div style={styles.logo}>{sidebarCollapsed ? 'SP' : 'SkillProgress'}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+  <img 
+    src="/logo1.svg" 
+    alt="App Logo" 
+    style={{ width: '32px', height: '32px', borderRadius: '8px' }} 
+  />
+  <div style={styles.logo}>
+    {sidebarCollapsed ? 'SP' : 'Elevate'}
+  </div>
+</div>
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             style={{
@@ -651,7 +660,7 @@ export default function SkillProgressDashboard() {
               cursor: 'pointer',
             }}
           >
-            SD
+            S
           </div>
         </div>
       </div>
