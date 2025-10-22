@@ -1,13 +1,33 @@
-// page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import {
+  BarChart,
+  Bar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  PieChart,
+  Pie,
+  Cell,
+  AreaChart,
+  Area,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 
 // ============================================================================
 // TYPE DEFINITIONS
 // ============================================================================
 
 type Page = 'dashboard' | 'skills' | 'courses' | 'roadmaps' | 'analysis' | 'profile' | 'settings';
+type AnalysisTimeframe = 'week' | 'month' | 'year';
 
 interface Skill {
   id: string;
@@ -55,6 +75,33 @@ interface Notification {
 }
 
 // ============================================================================
+// CUSTOM TOOLTIP COMPONENT FOR CHARTS
+// ============================================================================
+
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div
+        style={{
+          backgroundColor: '#1a1a1a',
+          border: '1px solid #667eea',
+          borderRadius: '8px',
+          padding: '12px',
+          color: '#fff',
+        }}
+      >
+        {payload.map((entry: any, index: number) => (
+          <p key={index} style={{ margin: '4px 0', fontSize: '12px', color: entry.color }}>
+            {entry.name}: {entry.value}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -74,6 +121,7 @@ export default function SkillProgressDashboard() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [roadmapSteps, setRoadmapSteps] = useState<RoadmapStep[]>([]);
+  const [analysisTimeframe, setAnalysisTimeframe] = useState<AnalysisTimeframe>('week');
 
   // ============================================================================
   // LOAD STATIC DATA ON MOUNT
@@ -212,6 +260,58 @@ export default function SkillProgressDashboard() {
   }, [showConfetti]);
 
   // ============================================================================
+  // ANALYSIS DATA PREPARATION
+  // ============================================================================
+
+  const skillsByCategory = skills.reduce((acc, skill) => {
+    const existing = acc.find((item) => item.category === skill.category);
+    if (existing) {
+      existing.level += skill.level;
+    } else {
+      acc.push({ category: skill.category, level: skill.level });
+    }
+    return acc;
+  }, [] as Array<{ category: string; level: number }>);
+
+  const skillProficiencyData = skills.map((skill) => ({
+    name: skill.name,
+    level: skill.level,
+  }));
+
+  const achievementRarityData = [
+    {
+      name: 'Common',
+      value: achievements.filter((a) => a.rarity === 'common').length,
+      color: '#888888',
+    },
+    {
+      name: 'Rare',
+      value: achievements.filter((a) => a.rarity === 'rare').length,
+      color: '#4facfe',
+    },
+    {
+      name: 'Epic',
+      value: achievements.filter((a) => a.rarity === 'epic').length,
+      color: '#764ba2',
+    },
+    {
+      name: 'Legendary',
+      value: achievements.filter((a) => a.rarity === 'legendary').length,
+      color: '#f093fb',
+    },
+  ].filter((item) => item.value > 0);
+
+  const xpProgressionData = [
+    { day: 'Mon', xp: 240 },
+    { day: 'Tue', xp: 380 },
+    { day: 'Wed', xp: 320 },
+    { day: 'Thu', xp: 490 },
+    { day: 'Fri', xp: 410 },
+    { day: 'Sat', xp: 520 },
+    { day: 'Sun', xp: 450 },
+  ];
+
+  // ============================================================================
   // HANDLE SKILL UPDATE (LOCAL STATE ONLY)
   // ============================================================================
 
@@ -230,7 +330,7 @@ export default function SkillProgressDashboard() {
         return skill;
       })
     );
-    
+
     setUserXP((prev) => prev + xpGain);
     console.log(`✅ Skill ${skillId} practiced: +${xpGain} XP`);
   };
@@ -463,7 +563,15 @@ export default function SkillProgressDashboard() {
         }}
       >
         <div style={{ fontSize: '64px', marginBottom: '16px' }}>🎉</div>
-        <h2 style={{ fontSize: '32px', marginBottom: '8px', background: 'linear-gradient(135deg, #667eea 0%, #f093fb 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+        <h2
+          style={{
+            fontSize: '32px',
+            marginBottom: '8px',
+            background: 'linear-gradient(135deg, #667eea 0%, #f093fb 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}
+        >
           Milestone Complete!
         </h2>
         <p style={{ fontSize: '18px', color: '#888' }}>You've earned XP and unlocked new achievements!</p>
@@ -495,16 +603,14 @@ export default function SkillProgressDashboard() {
     return (
       <div style={styles.sidebar}>
         <div style={styles.sidebarHeader}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-  <img 
-    src="/logo1.svg" 
-    alt="App Logo" 
-    style={{ width: '32px', height: '32px', borderRadius: '8px' }} 
-  />
-  <div style={styles.logo}>
-    {sidebarCollapsed ? 'SP' : 'Elevate'}
-  </div>
-</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <img
+              src="/logo1.svg"
+              alt="App Logo"
+              style={{ width: '32px', height: '32px', borderRadius: '8px' }}
+            />
+            <div style={styles.logo}>{sidebarCollapsed ? 'SP' : 'Elevate'}</div>
+          </div>
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             style={{
@@ -672,13 +778,28 @@ export default function SkillProgressDashboard() {
     return (
       <div>
         {/* Header Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: '24px',
+            marginBottom: '32px',
+          }}
+        >
           {/* XP Card */}
           <div style={{ ...styles.card }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <div>
                 <p style={{ fontSize: '14px', color: '#888', margin: 0 }}>Total XP</p>
-                <h2 style={{ fontSize: '36px', margin: '8px 0', background: 'linear-gradient(135deg, #667eea 0%, #f093fb 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                <h2
+                  style={{
+                    fontSize: '36px',
+                    margin: '8px 0',
+                    background: 'linear-gradient(135deg, #667eea 0%, #f093fb 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >
                   {userXP.toLocaleString()}
                 </h2>
               </div>
@@ -810,7 +931,7 @@ export default function SkillProgressDashboard() {
                   cursor: 'pointer',
                 }}
                 onMouseEnter={(e) => {
-                                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.2)';
+                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.2)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
@@ -872,7 +993,9 @@ export default function SkillProgressDashboard() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <div>
                   <h4 style={{ fontSize: '18px', margin: '0 0 4px 0' }}>{skill.name}</h4>
-                  <span style={{ ...styles.badge, backgroundColor: '#1a1a1a', color: '#888' }}>{skill.category}</span>
+                  <span style={{ ...styles.badge, backgroundColor: '#1a1a1a', color: '#888' }}>
+                    {skill.category}
+                  </span>
                 </div>
                 <div
                   style={{
@@ -960,7 +1083,14 @@ export default function SkillProgressDashboard() {
             >
               <div style={{ fontSize: '64px', textAlign: 'center', marginBottom: '16px' }}>{course.thumbnail}</div>
               <h3 style={{ fontSize: '18px', marginBottom: '8px' }}>{course.title}</h3>
-              <span style={{ ...styles.badge, backgroundColor: 'rgba(102, 126, 234, 0.2)', color: '#667eea', marginBottom: '16px' }}>
+              <span
+                style={{
+                  ...styles.badge,
+                  backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                  color: '#667eea',
+                  marginBottom: '16px',
+                }}
+              >
                 {course.category}
               </span>
               <p style={{ fontSize: '14px', color: '#888', marginTop: '12px', marginBottom: '16px' }}>
@@ -1087,115 +1217,232 @@ export default function SkillProgressDashboard() {
     );
   };
 
-  // Analysis View Component
+  // Analysis View Component (NEW)
   const AnalysisView = () => {
-    const skillsByCategory = skills.reduce((acc, skill) => {
-      acc[skill.category] = (acc[skill.category] || 0) + skill.level;
-      return acc;
-    }, {} as Record<string, number>);
-
     return (
-      <div>
-        <h2 style={{ fontSize: '28px', marginBottom: '32px' }}>Skill Analysis</h2>
-
-        {/* Skill Category Chart */}
-        <div style={{ ...styles.card, marginBottom: '32px' }}>
-          <h3 style={{ fontSize: '20px', marginBottom: '24px' }}>Skills by Category</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {Object.entries(skillsByCategory).map(([category, total]) => (
-              <div key={category}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '16px' }}>{category}</span>
-                  <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#667eea' }}>Level {total}</span>
-                </div>
-                <div style={{ ...styles.progressBar, height: '16px' }}>
-                  <div
-                    style={{
-                      ...styles.progressFill,
-                      width: `${(total / (skills.length * 10)) * 100}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Individual Skills Chart */}
-        <div style={{ ...styles.card, marginBottom: '32px' }}>
-          <h3 style={{ fontSize: '20px', marginBottom: '24px' }}>Skill Proficiency Levels</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {skills
-              .sort((a, b) => b.level - a.level)
-              .map((skill) => (
-                <div key={skill.id}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '14px' }}>{skill.name}</span>
-                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: skill.color }}>
-                      Level {skill.level}
-                    </span>
-                  </div>
-                  <div style={{ ...styles.progressBar, height: '12px' }}>
-                    <div
-                      style={{
-                        height: '100%',
-                        backgroundColor: skill.color,
-                        width: `${(skill.level / 10) * 100}%`,
-                        borderRadius: '4px',
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-          </div>
-        </div>
-
-        {/* Leaderboard */}
-        <div style={styles.card}>
-          <h3 style={{ fontSize: '20px', marginBottom: '24px' }}>Global Leaderboard</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {[
-              { rank: 1, name: 'Alex Chen', xp: 5420, avatar: '🥇' },
-              { rank: 2, name: 'Maria Garcia', xp: 4890, avatar: '🥈' },
-              { rank: 3, name: 'Sahil Dubey (You)', xp: userXP, avatar: '🥉' },
-              { rank: 4, name: 'John Smith', xp: 2650, avatar: '👤' },
-              { rank: 5, name: 'Emily Wong', xp: 2430, avatar: '👤' },
-            ].map((user) => (
-              <div
-                key={user.rank}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', animation: 'fadeIn 0.5s ease' }}>
+        {/* Header with Timeframe Selection */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h2 style={{ fontSize: '28px', margin: 0 }}>Skill Analysis Dashboard</h2>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            {(['week', 'month', 'year'] as const).map((tf) => (
+              <button
+                key={tf}
+                onClick={() => setAnalysisTimeframe(tf)}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '16px',
-                  backgroundColor: user.name.includes('You') ? 'rgba(102, 126, 234, 0.1)' : '#1a1a1a',
+                  padding: '12px 24px',
                   borderRadius: '12px',
-                  border: user.name.includes('You') ? '1px solid #667eea' : 'none',
+                  fontWeight: '600',
+                  transition: 'all 0.2s ease',
+                  transform: 'scale(1)',
+                  cursor: 'pointer',
+                  backgroundColor:
+                    analysisTimeframe === tf
+                      ? '#667eea'
+                      : '#1a1a1a',
+                  color:
+                    analysisTimeframe === tf
+                      ? '#ffffff'
+                      : '#888',
+                  boxShadow:
+                    analysisTimeframe === tf
+                      ? '0 4px 12px rgba(102, 126, 234, 0.3)'
+                      : 'none',
+                  border: analysisTimeframe === tf ? 'none' : '1px solid #2a2a2a',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <span style={{ fontSize: '24px', width: '32px' }}>{user.avatar}</span>
-                  <div>
-                    <p style={{ fontSize: '16px', margin: 0, fontWeight: user.name.includes('You') ? 'bold' : 'normal' }}>
-                      {user.name}
-                    </p>
-                    <p style={{ fontSize: '12px', color: '#888', margin: 0 }}>Rank #{user.rank}</p>
-                  </div>
-                </div>
-                <span
-                  style={{
-                    ...styles.badge,
-                    backgroundColor: 'rgba(240, 147, 251, 0.2)',
-                    color: '#f093fb',
-                    fontSize: '14px',
-                  }}
-                >
-                  {user.xp.toLocaleString()} XP
-                </span>
-              </div>
+                {tf.charAt(0).toUpperCase() + tf.slice(1)}
+              </button>
             ))}
           </div>
         </div>
+
+        {/* Skills by Category - Bar Chart */}
+        <div
+          style={{
+            ...styles.card,
+            border: '1px solid #1a1a1a',
+            transition: 'all 0.3s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = '#667eea';
+            e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.2)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = '#1a1a1a';
+            e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.3)';
+          }}
+        >
+          <h3 style={{ fontSize: '20px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>📊</span> Skills by Category
+          </h3>
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart data={skillsByCategory} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+              <defs>
+                <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#667eea" />
+                  <stop offset="100%" stopColor="#764ba2" />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
+              <XAxis dataKey="category" stroke="#9CA3AF" style={{ fontSize: '12px', fontWeight: 500 }} />
+              <YAxis stroke="#9CA3AF" style={{ fontSize: '12px' }} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend />
+              <Bar dataKey="level" fill="url(#barGradient)" name="Level" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Two Column Layout */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))', gap: '24px' }}>
+          {/* Skill Proficiency Radar */}
+          <div
+            style={{
+              ...styles.card,
+              border: '1px solid #1a1a1a',
+              transition: 'all 0.3s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#667eea';
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.2)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#1a1a1a';
+              e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.3)';
+            }}
+          >
+            <h3 style={{ fontSize: '20px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>🎯</span> Skill Proficiency Radar
+            </h3>
+            <ResponsiveContainer width="100%" height={320}>
+              <RadarChart data={skillProficiencyData}>
+                <defs>
+                  <linearGradient id="radarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#667eea" stopOpacity={0.8} />
+                    <stop offset="100%" stopColor="#f093fb" stopOpacity={0.6} />
+                  </linearGradient>
+                </defs>
+                <PolarGrid stroke="#374151" />
+                <PolarAngleAxis dataKey="name" stroke="#9CA3AF" style={{ fontSize: '11px' }} />
+                <PolarRadiusAxis angle={90} domain={[0, 10]} stroke="#9CA3AF" style={{ fontSize: '11px' }} />
+                <Radar
+                  name="Level"
+                  dataKey="level"
+                  stroke="url(#radarGradient)"
+                  fill="url(#radarGradient)"
+                  fillOpacity={0.6}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Achievement Rarity Distribution */}
+          <div
+            style={{
+              ...styles.card,
+              border: '1px solid #1a1a1a',
+              transition: 'all 0.3s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#667eea';
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.2)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#1a1a1a';
+              e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.3)';
+            }}
+          >
+            <h3 style={{ fontSize: '20px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>🏆</span> Achievement Distribution
+            </h3>
+            <ResponsiveContainer width="100%" height={320}>
+              <PieChart>
+                <Pie
+                  data={achievementRarityData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={true}
+                  label={({ name, value }) => `${name}: ${value}`}
+                  outerRadius={100}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {achievementRarityData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* XP Progression - Area Chart */}
+        <div
+          style={{
+            ...styles.card,
+            border: '1px solid #1a1a1a',
+            transition: 'all 0.3s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = '#667eea';
+            e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.2)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = '#1a1a1a';
+            e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.3)';
+          }}
+        >
+          <h3 style={{ fontSize: '20px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>📈</span> Weekly XP Progression
+          </h3>
+          <ResponsiveContainer width="100%" height={320}>
+            <AreaChart data={xpProgressionData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+              <defs>
+                <linearGradient id="colorXp" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#667eea" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#667eea" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
+              <XAxis dataKey="day" stroke="#9CA3AF" style={{ fontSize: '12px', fontWeight: 500 }} />
+              <YAxis stroke="#9CA3AF" style={{ fontSize: '12px' }} />
+              <Tooltip content={<CustomTooltip />} />
+              <Area
+                type="monotone"
+                dataKey="xp"
+                stroke="#667eea"
+                strokeWidth={2}
+                fillOpacity={1}
+                fill="url(#colorXp)"
+                name="XP Earned"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+        <style>{`
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+        `}</style>
       </div>
     );
   };
@@ -1231,7 +1478,7 @@ export default function SkillProgressDashboard() {
                 <p style={{ fontSize: '12px', color: '#888', margin: 0 }}>Level</p>
               </div>
               <div style={{ width: '1px', backgroundColor: '#2a2a2a' }} />
-              <div>
+                            <div>
                 <p style={{ fontSize: '28px', fontWeight: 'bold', margin: 0, color: '#764ba2' }}>
                   {userXP.toLocaleString()}
                 </p>
