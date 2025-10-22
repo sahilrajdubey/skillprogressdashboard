@@ -1638,10 +1638,6 @@ export default function SkillProgressDashboard() {
     }
   };
 
-  // ============================================================================
-  // MAIN RENDER
-  // ============================================================================
-
   return (
     <div style={styles.container}>
       <Sidebar />
