@@ -1552,7 +1552,7 @@ export default function SkillProgressDashboard() {
                 </label>
                 <input
                   type="email"
-                  value="sahil@example.com"
+                  value="sahilrajdubey@gmail.com"
                   style={{ ...styles.searchBar, width: '100%' }}
                   readOnly
                 />
