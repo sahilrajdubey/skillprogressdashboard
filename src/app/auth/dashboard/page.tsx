@@ -40,6 +40,7 @@ interface Skill {
 }
 
 interface Course {
+  continueUrl: any;
   id: string;
   title: string;
   progress: number;
@@ -144,49 +145,52 @@ export default function SkillProgressDashboard() {
     ]);
 
     // Set static courses
-    setCourses([
-      {
-        id: '1',
-        title: 'React Mastery: Advanced Patterns',
-        progress: 78,
-        xpReward: 500,
-        thumbnail: '🎯',
-        category: 'Frontend',
-        lessons: 45,
-        completedLessons: 35,
-      },
-      {
-        id: '2',
-        title: 'TypeScript Deep Dive',
-        progress: 45,
-        xpReward: 450,
-        thumbnail: '📘',
-        category: 'Languages',
-        lessons: 30,
-        completedLessons: 14,
-      },
-      {
-        id: '3',
-        title: 'System Design Fundamentals',
-        progress: 92,
-        xpReward: 800,
-        thumbnail: '🏗️',
-        category: 'Architecture',
-        lessons: 25,
-        completedLessons: 23,
-      },
-      {
-        id: '4',
-        title: 'Docker & Kubernetes',
-        progress: 30,
-        xpReward: 600,
-        thumbnail: '🐳',
-        category: 'DevOps',
-        lessons: 40,
-        completedLessons: 12,
-      },
-    ]);
-
+setCourses([
+  {
+    id: '1',
+    title: 'React Mastery: Advanced Patterns',
+    progress: 78,
+    xpReward: 500,
+    thumbnail: '🎯',
+    category: 'Frontend',
+    lessons: 45,
+    completedLessons: 35,
+    continueUrl: 'https://www.youtube.com/watch?v=Ke90Tje7VS0' 
+  },
+  {
+    id: '2',
+    title: 'TypeScript Deep Dive',
+    progress: 45,
+    xpReward: 450,
+    thumbnail: '📘',
+    category: 'Languages',
+    lessons: 30,
+    completedLessons: 14,
+    continueUrl: 'https://www.youtube.com/watch?v=BwuLxPH8IDs' 
+  },
+  {
+    id: '3',
+    title: 'System Design Fundamentals',
+    progress: 92,
+    xpReward: 800,
+    thumbnail: '🏗️',
+    category: 'Architecture',
+    lessons: 25,
+    completedLessons: 23,
+    continueUrl: 'https://youtu.be/43-X22tdxiI?si=h3WmXVk4uYA2f-8a'
+  },
+  {
+    id: '4',
+    title: 'Docker & Kubernetes',
+    progress: 30,
+    xpReward: 600,
+    thumbnail: '🐳',
+    category: 'DevOps',
+    lessons: 40,
+    completedLessons: 12,
+    continueUrl: 'https://www.youtube.com/watch?v=Gjnup-PuquQ' 
+  },
+]);
     // Set static achievements
     setAchievements([
       {
@@ -1059,69 +1063,76 @@ export default function SkillProgressDashboard() {
   };
 
   // Courses View Component
-  const CoursesView = () => {
-    return (
-      <div>
-        <h2 style={{ fontSize: '28px', marginBottom: '32px' }}>All Courses</h2>
-        <div style={styles.grid}>
-          {courses.map((course) => (
-            <div
-              key={course.id}
+const CoursesView = () => {
+  return (
+    <div>
+      <h2 style={{ fontSize: '28px', marginBottom: '32px' }}>All Courses</h2>
+      <div style={styles.grid}>
+        {courses.map((course) => (
+          <div
+            key={course.id}
+            style={{
+              ...styles.card,
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-8px)';
+              e.currentTarget.style.boxShadow = '0 12px 32px rgba(102, 126, 234, 0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.3)';
+            }}
+          >
+            <div style={{ fontSize: '64px', textAlign: 'center', marginBottom: '16px' }}>{course.thumbnail}</div>
+            <h3 style={{ fontSize: '18px', marginBottom: '8px' }}>{course.title}</h3>
+            <span
               style={{
-                ...styles.card,
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-8px)';
-                e.currentTarget.style.boxShadow = '0 12px 32px rgba(102, 126, 234, 0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.3)';
+                ...styles.badge,
+                backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                color: '#667eea',
+                marginBottom: '16px',
               }}
             >
-              <div style={{ fontSize: '64px', textAlign: 'center', marginBottom: '16px' }}>{course.thumbnail}</div>
-              <h3 style={{ fontSize: '18px', marginBottom: '8px' }}>{course.title}</h3>
-              <span
-                style={{
-                  ...styles.badge,
-                  backgroundColor: 'rgba(102, 126, 234, 0.2)',
-                  color: '#667eea',
-                  marginBottom: '16px',
-                }}
-              >
-                {course.category}
-              </span>
-              <p style={{ fontSize: '14px', color: '#888', marginTop: '12px', marginBottom: '16px' }}>
-                {course.completedLessons} of {course.lessons} lessons completed
-              </p>
-              <div style={styles.progressBar}>
-                <div style={{ ...styles.progressFill, width: `${course.progress}%` }} />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>
-                <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#667eea' }}>{course.progress}%</span>
-                <span style={{ ...styles.badge, backgroundColor: 'rgba(240, 147, 251, 0.2)', color: '#f093fb' }}>
-                  +{course.xpReward} XP
-                </span>
-              </div>
-              <button
-                style={{ ...styles.button, width: '100%', marginTop: '16px' }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.02)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                }}
-              >
-                Continue Learning
-              </button>
+              {course.category}
+            </span>
+            <p style={{ fontSize: '14px', color: '#888', marginTop: '12px', marginBottom: '16px' }}>
+              {course.completedLessons} of {course.lessons} lessons completed
+            </p>
+            <div style={styles.progressBar}>
+              <div style={{ ...styles.progressFill, width: `${course.progress}%` }} />
             </div>
-          ))}
-        </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>
+              <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#667eea' }}>{course.progress}%</span>
+              <span style={{ ...styles.badge, backgroundColor: 'rgba(240, 147, 251, 0.2)', color: '#f093fb' }}>
+                +{course.xpReward} XP
+              </span>
+            </div>
+            <button
+              style={{ ...styles.button, width: '100%', marginTop: '16px' }}
+              onClick={(e) => {
+                // prevent card-level handlers from interfering
+                e.stopPropagation();
+                // open the course-specific URL (ensure each course object has a continueUrl property)
+                const url = course.continueUrl ;
+                window.open(url, '_blank');
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.02)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              Continue Learning
+            </button>
+          </div>
+        ))}
       </div>
-    );
-  };
+    </div>
+  );
+};
 
   // Roadmaps View Component
   const RoadmapsView = () => {
